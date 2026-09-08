@@ -305,40 +305,51 @@ for line in wrapped_answer:
 
 img.save(image_path, "PNG")
 
-# --- 7. Download and Standardize Stock Audio Track ---
+# --- 7. Robust Audio Download & Community-Standard 48kHz Transcoding ---
 raw_audio_path = "raw_music.ogg"
-audio_path = "background_music.mp3"
-video_path = "temp_reel_video.mp4"
+audio_path = "background_music.aac"
+video_path = "final_reel_output.mp4"
 
-print("Downloading stock music track...")
-music_url = "https://upload.wikimedia.org/wikipedia/commons/e/e4/Scott_Joplin_-_Easy_Winners_%281901%29.ogg"
+audio_urls = [
+    "https://upload.wikimedia.org/wikipedia/commons/e/e4/Scott_Joplin_-_Easy_Winners_%281901%29.ogg",
+    "https://upload.wikimedia.org/wikipedia/commons/d/d4/Scott_Joplin_-_Maple_Leaf_Rag_%28piano_roll%29.ogg"
+]
+
 headers = {
     "User-Agent": "DailyScoopBot/1.0 (Contact: admin@dailyscoop.local; Automated educational media project)"
 }
 
-try:
-    music_res = requests.get(music_url, headers=headers, timeout=20)
-    music_res.raise_for_status()
-    with open(raw_audio_path, "wb") as f:
-        f.write(music_res.content)
-    
-    print("Standardizing audio track to MP3...")
-    subprocess.run([
-        "ffmpeg", "-y",
-        "-i", raw_audio_path,
-        "-vn",
-        "-ar", "44100",
-        "-ac", "2",
-        "-b:a", "192k",
-        audio_path
-    ], check=True)
-    print("Audio standardization complete.")
-except Exception as e:
-    print(f"Warning: Stock audio download/conversion failed ({e}). Creating silent fallback track.")
-    subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-t", "6", audio_path], check=True)
+download_success = False
+for music_url in audio_urls:
+    try:
+        print(f"Downloading track from: {music_url}")
+        music_res = requests.get(music_url, headers=headers, timeout=25)
+        if music_res.status_code == 200 and len(music_res.content) > 50000:
+            with open(raw_audio_path, "wb") as f:
+                f.write(music_res.content)
+            download_success = True
+            break
+    except Exception as e:
+        print(f"Download attempt failed: {e}")
 
-# --- 8. Combine Image and Audio with Explicit Stream Mapping ---
-print("Combining image and standardized audio into 1080x1920 6-second MP4 video...")
+if not download_success:
+    raise Exception("CRITICAL: Failed to download stock music tracks from all available URLs.")
+
+print("Standardizing audio to strict Facebook Reels standard (48kHz stereo AAC)...")
+subprocess.run([
+    "ffmpeg", "-y",
+    "-i", raw_audio_path,
+    "-vn",
+    "-filter:a", "volume=1.8",
+    "-ar", "48000",
+    "-ac", "2",
+    "-c:a", "aac",
+    "-b:a", "192k",
+    audio_path
+], check=True)
+
+# --- 8. Mux Video + Audio with Faststart Optimization ---
+print("Combining image and audio into optimized 1080x1920 MP4 video...")
 ffmpeg_cmd = [
     "ffmpeg", "-y",
     "-loop", "1",
@@ -347,17 +358,21 @@ ffmpeg_cmd = [
     "-map", "0:v:0",
     "-map", "1:a:0",
     "-c:v", "libx264",
+    "-profile:v", "main",
+    "-level", "4.0",
     "-tune", "stillimage",
+    "-r", "30",
     "-t", "6",
     "-pix_fmt", "yuv420p",
     "-c:a", "aac",
     "-b:a", "192k",
+    "-movflags", "+faststart",
     "-shortest",
     video_path
 ]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Video reel created successfully with locked-in audio stream.")
+print("Video reel created successfully with community-compliant audio configuration.")
 
 # --- 9. Format Social Media Caption Text ---
 post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
@@ -367,13 +382,16 @@ engagement_cta = (
 )
 post_text = post_header + ai_trivia_formatted + engagement_cta
 
-# --- 10. Post Video to Facebook Reels (Sharing to both Reels Tab & Main Feed) ---
+# --- 10. Post Video to Facebook Reels with Explicit File Tuple ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
 active_token = get_valid_facebook_token()
 post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
 
 with open(video_path, "rb") as vid_file:
-    files = {"source": vid_file}
+    # Explicit tuple format prevents Meta's ingest gateway from rejecting format headers
+    files = {
+        "source": ("final_reel_output.mp4", vid_file, "video/mp4")
+    }
     payload = {
         "description": post_text,
         "media_type": "REELS",
