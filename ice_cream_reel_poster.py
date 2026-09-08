@@ -3,6 +3,9 @@ import time
 import random
 import subprocess
 import requests
+import wave
+import math
+import struct
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
@@ -194,7 +197,6 @@ image_path = "temp_reel_image.png"
 # --- 6. Image Resizing (9:16 Ratio) & Render Text Box Overlay ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 
-# Guarantee a 1080x1920 (9:16) image size via center-cropping/resizing
 target_width = 1080
 target_height = 1920
 img_ratio = img.width / img.height
@@ -216,7 +218,6 @@ img = img.crop((left, top, right, bottom))
 
 img_width, img_height = img.size
 
-# Load much larger fonts
 try:
     font = ImageFont.truetype("DejaVuSans.ttf", 36)
     header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 44)
@@ -224,7 +225,6 @@ except IOError:
     font = ImageFont.load_default()
     header_font = font
 
-# Parse the trivia: Line 1 becomes the yellow header, Lines 2 & 3 become the body
 trivia_parts = [p.strip() for p in cleaned_trivia.split("\n") if p.strip()]
 header_text = trivia_parts[0] if len(trivia_parts) > 0 else "[★] ICE CREAM HISTORY"
 body_text_paragraphs = trivia_parts[1:] if len(trivia_parts) > 1 else []
@@ -233,7 +233,6 @@ box_x0 = 50
 box_x1 = img_width - 50
 max_text_width = (box_x1 - box_x0) - 60
 
-# Word wrap Header
 wrapped_header_lines = []
 current_line = ""
 for word in header_text.split():
@@ -245,7 +244,6 @@ for word in header_text.split():
         current_line = word
 if current_line: wrapped_header_lines.append(current_line)
 
-# Word wrap Body
 wrapped_body_lines = []
 for paragraph in body_text_paragraphs:
     current_line = ""
@@ -263,8 +261,6 @@ body_line_height = 46
 padding = 35
 
 total_box_height = (len(wrapped_header_lines) * header_line_height) + (len(wrapped_body_lines) * body_line_height) + (padding * 2) + 15
-
-# Top-placed box
 box_y0 = 120
 box_y1 = box_y0 + total_box_height
 
@@ -285,78 +281,75 @@ draw = ImageDraw.Draw(img)
 text_x = box_x0 + 30
 text_y = box_y0 + padding
 
-# Draw the dynamic Yellow Header
 for line in wrapped_header_lines:
     draw.text((text_x, text_y), line, fill=(252, 211, 77, 255), font=header_font)
     text_y += header_line_height
 
-text_y += 15 # Gap between header and body
+text_y += 15
 
-# Draw the white Body Text
 for line in wrapped_body_lines:
     draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
     text_y += body_line_height
 
 img.save(image_path, "PNG")
 
-# --- 7. Download Music & Convert Image to MP4 Video with FFmpeg ---
-audio_path = "background_music.ogg"
+# --- 7. Locally Generate Upbeat Background Music (Zero Downloads Needed) ---
+audio_path = "background_music.wav"
 video_path = "temp_reel_video.mp4"
 
-if not os.path.exists(audio_path):
-    print("Downloading royalty-free background music...")
-    music_url = "https://upload.wikimedia.org/wikipedia/commons/d/d3/Scott_Joplin_-_The_Entertainer_%281902%29.ogg"
-    
-    # Add a standard browser User-Agent so Wikimedia doesn't block the request
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-    
-    try:
-        music_res = requests.get(music_url, headers=headers)
-        music_res.raise_for_status()
-        with open(audio_path, "wb") as f:
-            f.write(music_res.content)
-        print("Music downloaded successfully.")
-    except Exception as e:
-        print(f"Warning: Could not download music ({e}).")
+print("Generating upbeat local background melody...")
+sample_rate = 44100
+duration = 6.0
+num_samples = int(sample_rate * duration)
 
-print("Converting image and music to 1080x1920 6-second MP4 video with FFmpeg...")
+# Cheerful music-box arpeggio note frequencies (C Major tune)
+notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 659.25, 523.25, 659.25]
+note_duration = duration / len(notes)
 
-# Failsafe: Check if the audio file actually exists before building the command
-if os.path.exists(audio_path):
-    ffmpeg_cmd = [
-        "ffmpeg", "-y",
-        "-loop", "1",
-        "-i", image_path,
-        "-i", audio_path,
-        "-c:v", "libx264",
-        "-t", "6",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-b:a", "192k",
-        "-shortest",
-        video_path
-    ]
-else:
-    print("Fallback activated: Using a silent audio track because the music file is missing.")
-    ffmpeg_cmd = [
-        "ffmpeg", "-y",
-        "-loop", "1",
-        "-i", image_path,
-        "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
-        "-c:v", "libx264",
-        "-t", "6",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-shortest",
-        video_path
-    ]
+audio_data = []
+for i in range(num_samples):
+    t = i / sample_rate
+    note_idx = int(t / note_duration) % len(notes)
+    freq = notes[note_idx]
+    
+    local_t = t % note_duration
+    envelope = math.sin(local_t * math.pi / note_duration) # Smooth note fade
+    
+    # Soft music box tone (sine wave + harmonic overtone)
+    val = math.sin(2 * math.pi * freq * t) * 0.4 + math.sin(2 * math.pi * (freq * 1.5) * t) * 0.15
+    val *= envelope * 0.6
+    
+    sample = int(val * 32767)
+    audio_data.append(struct.pack('<h', max(-32768, min(32767, sample))))
+
+with wave.open(audio_path, "w") as wav_file:
+    wav_file.setnchannels(1)
+    wav_file.setsampwidth(2)
+    wav_file.setframerate(sample_rate)
+    wav_file.writeframes(b''.join(audio_data))
+
+print("Local audio melody generated successfully.")
+
+# --- 8. Convert Image and Audio to MP4 Video with FFmpeg ---
+print("Converting image and audio to 1080x1920 6-second MP4 video with FFmpeg...")
+ffmpeg_cmd = [
+    "ffmpeg", "-y",
+    "-loop", "1",
+    "-i", image_path,
+    "-i", audio_path,
+    "-c:v", "libx264",
+    "-t", "6",
+    "-pix_fmt", "yuv420p",
+    "-c:a", "aac",
+    "-b:a", "192k",
+    "-shortest",
+    video_path
+]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Video reel file created successfully.")
+print("Video reel file created successfully with active audio.")
 
-# --- 8. Format Social Media Caption Text ---
+# --- 9. Format Social Media Caption Text ---
 post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
 engagement_cta = (
     "\n\n" + "🐕 " + make_bold("LAB TESTED & APPROVED!") + "\n" +
@@ -364,7 +357,7 @@ engagement_cta = (
 )
 post_text = post_header + ai_trivia_formatted + engagement_cta
 
-# --- 9. Post Video to Facebook Reels Endpoint ---
+# --- 10. Post Video to Facebook Reels Endpoint ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
 active_token = get_valid_facebook_token()
 post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
