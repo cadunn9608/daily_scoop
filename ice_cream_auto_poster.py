@@ -223,4 +223,55 @@ img.save(image_path, "PNG")
 print("Trivia background image with clean text overlay successfully generated and saved!")
 
 # --- 6. Format Social Media Caption Text ---
-post_header = make_bold("🍦 THE DAILY SCOOP WITH PETEY
+post_header = make_bold("🍦 THE DAILY SCOOP WITH PETEY & ANDREW 🐾\n\n")
+engagement_cta = (
+    "\n\n" + "🐕 " + make_bold("QUALITY CONTROL APPROVED!") + "\n" +
+    "Andrew and Petey reviewed today's data from the lab and gave it two paws up. " +
+    "What flavor are you tasting today? Let us know below! 👇"
+)
+post_text = post_header + ai_trivia_formatted + engagement_cta
+
+# --- 7. Exchange/Refresh Facebook Token ---
+app_id = os.environ["FACEBOOK_APP_ID"]
+app_secret = os.environ["FACEBOOK_APP_SECRET"]
+current_token = os.environ["FACEBOOK_ACCESS_TOKEN"]
+
+refresh_url = "https://graph.facebook.com/v18.0/oauth/access_token"
+refresh_params = {
+    "grant_type": "fb_exchange_token",
+    "client_id": app_id,
+    "client_secret": app_secret,
+    "fb_exchange_token": current_token
+}
+
+try:
+    print("Refreshing Facebook access token...")
+    refresh_res = requests.get(refresh_url, params=refresh_params).json()
+    active_token = refresh_res.get("access_token", current_token)
+    print("Token refreshed successfully.")
+except Exception as e:
+    print(f"Failed to refresh token: {e}. Using existing token.")
+    active_token = current_token
+
+# --- 8. Post the Branded Photo + Caption to Facebook Page Feed ---
+page_id = os.environ["FACEBOOK_PAGE_ID"]
+post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
+
+print(f"Posting photo to Facebook Page: {page_id}")
+
+with open(image_path, "rb") as img_file:
+    files = {"source": img_file}
+    payload = {
+        "caption": post_text,
+        "published": "true",
+        "access_token": active_token
+    }
+    try:
+        res = requests.post(post_url, data=payload, files=files)
+        res_data = res.json()
+        if "id" in res_data:
+            print(f"Successfully posted to Facebook! Post ID: {res_data['id']}")
+        else:
+            print(f"Failed to post to Facebook: {res_data}")
+    except Exception as e:
+        print(f"Exception occurred while posting to Facebook: {e}")
