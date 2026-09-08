@@ -76,6 +76,9 @@ text_models_to_try = [
     "gemini-flash-latest"
 ]
 
+# Domain stop words to ignore during similarity checks so common words don't block unique posts
+domain_stopwords = {"cream", "answer", "history", "ice", "scoop", "trivia", "question", "fact"}
+
 # Try up to 3 generation attempts to enforce absolute uniqueness
 for attempt in range(3):
     trivia_prompt = (
@@ -98,14 +101,14 @@ for attempt in range(3):
             time.sleep(1)
 
     if candidate_text:
-        # Keyword overlap check to block accidental duplicate topics
+        # Keyword overlap check with punctuation stripping and stopword filtering to block accidental duplicate topics
         candidate_lower = candidate_text.lower()
         is_too_similar = False
         for past in recent_history:
-            past_words = set(w for w in past.lower().split() if len(w) > 4)
-            candidate_words = set(w for w in candidate_lower.split() if len(w) > 4)
+            past_words = set(w.strip('.,!?:') for w in past.lower().split() if len(w) > 4) - domain_stopwords
+            candidate_words = set(w.strip('.,!?:') for w in candidate_lower.split() if len(w) > 4) - domain_stopwords
             common_words = past_words.intersection(candidate_words)
-            if len(common_words) >= 3:
+            if len(common_words) >= 4:
                 is_too_similar = True
                 print(f"Rejected candidate due to keyword overlap: {common_words}")
                 break
