@@ -140,7 +140,7 @@ image_prompts_pool = [
     "A whimsical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, operating a steampunk ice cream factory filled with copper pipes and swirling vanilla soft-serve while wearing tiny goggles. Ultra-detailed, no text.",
     "A classic 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, standing by a 1900 soda shop counter decorated with vintage glass sprinkle jars and bowties. Clean background with no text. Warm nostalgic lighting.",
     "A magical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a night-time carnival ice cream cart lit by thousands of glowing fairy lights, handing out treats. No signs. Vibrant colors.",
-    "A charming 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving homemade churned ice cream in wooden bowls on a rustic old-fashioned country store porch in 1902. Clean wooden architecture with zero text.",
+    "A charming 9:16 vertical 3D Disney-style digital art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving homemade churned ice cream in wooden bowls on a rustic old-fashioned country store porch in 1902. Clean wooden architecture with zero text.",
     "A grand 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, presenting an elaborate multi-tiered ice cream cake in a majestic 1910 grand hotel dessert salon. Elegant background with no letters. Cinematic lighting.",
     "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing tiny diving helmets inside an underwater coral-reef ice cream parlor scooping pastel treats. Clean coral backdrop. Vibrant aquatic colors.",
     "A glowing 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside an enchanted forest treehouse ice cream shoppe surrounded by sparkling mint-chip swirls and fireflies. Magical lighting, no text.",
@@ -177,7 +177,7 @@ for img_model in image_models_to_try:
 if not image_bytes:
     raise Exception("All image models failed for Reel background generation.")
 
-# --- 3. Process Image and Overlay Top-Positioned Text Box (Moved up ~0.5" higher) ---
+# --- 3. Process Image and Overlay Top-Positioned Text Box (Moved up higher to Y = 50) ---
 image_path_png = "temp_reel_image.png"
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
@@ -220,8 +220,8 @@ if wrapped_lines and wrapped_lines[-1] == "":
 padding = 28
 total_box_height = (len(wrapped_lines) * line_height) + (padding * 2)
 
-# Moved up higher to Y = 90 (~0.5" higher than previous 160 position)
-box_y0 = 90
+# Moved up higher to Y = 50 (~0.5" higher than previous 90 position)
+box_y0 = 50
 box_y1 = box_y0 + total_box_height
 
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -256,49 +256,47 @@ for i, line in enumerate(wrapped_lines):
 
 img.save(image_path_png, "PNG")
 
-# --- 4. Fetch Music & Render MP4 Video via Robust FFmpeg Audio Pipeline ---
+# --- 4. Fetch Reliable MP3 Audio & Render MP4 Video via Robust FFmpeg Pipeline ---
 audio_path = "temp_music.mp3"
-ragtime_audio_pool = [
-    "https://upload.wikimedia.org/wikipedia/commons/d/d4/Scott_Joplin_-_Maple_Leaf_Rag_%28piano_roll%29.ogg",
-    "https://upload.wikimedia.org/wikipedia/commons/c/c8/Scott_Joplin_-_The_Entertainer_%28piano_roll%29.ogg",
-    "https://upload.wikimedia.org/wikipedia/commons/e/e3/Scott_Joplin_-_Elite_Syncopations_%28piano_roll%29.ogg"
-]
+# Direct, reliable public domain MP3 audio link (Scott Joplin ragtime piano)
+reliable_audio_url = "https://ia800504.us.archive.org/3/items/TheEntertainerScottJoplin1902/TheEntertainer.mp3"
 
-selected_audio_url = random.choice(ragtime_audio_pool)
 audio_downloaded = False
-
 try:
-    audio_res = requests.get(selected_audio_url, timeout=10)
+    audio_res = requests.get(reliable_audio_url, timeout=15)
     if audio_res.status_code == 200:
         with open(audio_path, "wb") as f:
             f.write(audio_res.content)
         audio_downloaded = True
-        print("Successfully downloaded upbeat ragtime music track!")
+        print("Successfully downloaded upbeat ragtime MP3 music track!")
 except Exception as e:
-    print(f"Warning: Could not download background music ({e}), falling back to silent track.")
+    print(f"Warning: Could not download background music ({e}), using synthetic tone generator fallback.")
 
 video_path_mp4 = "temp_reel_video.mp4"
 
 if audio_downloaded:
-    # Explicit audio resampling and formatting flags to ensure playback compatibility on Facebook Reels
+    # Explicit stream mapping (-map 0:v:0 -map 1:a:0) ensures Facebook recognizes the valid audio track
     ffmpeg_cmd = [
         "ffmpeg", "-loop", "1", "-i", image_path_png,
         "-i", audio_path,
+        "-map", "0:v:0", "-map", "1:a:0",
         "-c:v", "libx264", "-t", "6", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
         "-shortest", "-y", video_path_mp4
     ]
 else:
+    # Bulletproof fallback using FFmpeg's built-in synth generator so it never registers as silent
     ffmpeg_cmd = [
         "ffmpeg", "-loop", "1", "-i", image_path_png,
-        "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+        "-f", "lavfi", "-i", "sine=f=440:d=6",
+        "-map", "0:v:0", "-map", "1:a:0",
         "-c:v", "libx264", "-t", "6", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
         "-shortest", "-y", video_path_mp4
     ]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Reel video and background music rendered successfully with audio track!")
+print("Reel video and background music rendered successfully with active audio track!")
 
 # --- 5. Publish to Facebook Reels API with Correct Binary Upload ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
