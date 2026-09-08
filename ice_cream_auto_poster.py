@@ -4,55 +4,53 @@ import random
 import requests
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
+# --- Configuration Setup ---
 def make_bold(text):
+    # Helper to create bold text for Facebook captions using Unicode symbols
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
+    bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜JKLMNOPQRSTUVWXYZ𝗮𝗯𝗰𝗱efghijklmnopqrstuvwxyz𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
     return text.translate(str.maketrans(normal, bold))
 
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+# Configure Gemini
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
-# 1. Fully Dynamic Topic Generation (Guarantees zero repeats by having AI invent a fresh, random topic every time)
+# Initialize Models
+text_model = genai.GenerativeModel('gemini-1.5-flash')
+image_model = genai.GenerativeModel('gemini-1.5-flash') # Gemini 1.5 Flash handles multimodal input/output well for this
+
+# --- 1. Fully Dynamic Topic Generation ---
+# Guarantees zero repeats by having AI invent a fresh, random topic every time.
 trivia_prompt = (
     "Generate a completely random, fascinating, and unique ice cream trivia fact (maximum 3 short sentences total). "
-    "To ensure variety, choose a completely unexpected angle—it could be an obscure historical event, a bizarre ancient or modern flavor, "
+    "To ensure variety, choose an unexpected angle—it could be an obscure historical event, a bizarre ancient or modern flavor, "
     "a fascinating food science principle, a global cultural tradition, or a modern culinary trend from 1990 onward. "
-    "Do not mention any commercial brand names like Dr. Bombay or Zumper. "
+    "Do not mention any commercial brand names. "
     "Output only the trivia content without any Markdown formatting or emojis."
 )
 
 ai_trivia_raw = None
-text_models_to_try = [
-    "gemini-3.5-flash",
-    "gemini-3.1-flash",
-    "gemini-3.6-flash",
-    "gemini-3-flash-preview",
-    "gemini-3.1-flash-lite"
-]
-
-for model_name in text_models_to_try:
-    print(f"Attempting dynamic trivia generation using model: {model_name}")
+for attempt in range(3): # Retry logic
     try:
-        response_text = client.models.generate_content(
-            model=model_name,
-            contents=trivia_prompt,
-        )
+        print(f"Attempting dynamic trivia generation (Attempt {attempt+1})...")
+        response_text = text_model.generate_content(trivia_prompt)
         ai_trivia_raw = response_text.text.strip()
-        print(f"Successfully generated trivia using {model_name}!")
-        break
+        if ai_trivia_raw:
+            print("Successfully generated trivia.")
+            break
     except Exception as e:
-        print(f"Model {model_name} failed with error: {e}. Trying next...")
+        print(f"Trivia generation failed: {e}")
         time.sleep(5)
 
 if not ai_trivia_raw:
-    raise Exception("All models failed to generate trivia content due to high demand.")
+    raise Exception("Failed to generate trivia content after multiple attempts.")
 
+# Clean up common prefixes
 cleaned_trivia = ai_trivia_raw
 prefixes_to_strip = [
     "ice cream trivia:", "did you know:", "trivia fact:", "fun fact:",
-    "ice cream fact", "trivia", "fact:"
+    "ice cream fact:", "ice cream fact", "trivia", "fact:"
 ]
 lower_trivia = cleaned_trivia.lower()
 for p in prefixes_to_strip:
@@ -63,7 +61,7 @@ for p in prefixes_to_strip:
 header_tag = "★ DAILY ICE CREAM TRIVIA ★"
 ai_trivia_formatted = make_bold(cleaned_trivia)
 
-# 2. Randomized Cartoon Background Settings Pool (33+ Options)
+# --- 2. Randomized Cartoon Background Settings Pool ---
 setting_choice = random.choice([
     "a high-tech futuristic ice cream testing laboratory with glowing holographic flavor charts and stainless steel tasting counters",
     "a cozy, sunlit wooden workshop filled with vintage ice cream churns, recipe notebooks, and colorful ingredient jars",
@@ -100,7 +98,7 @@ setting_choice = random.choice([
     "a serene Japanese Zen garden tea house with smooth river rocks, raked gravel paths, and bonsai trees"
 ])
 
-# 3. Randomized Scientist, Engineer, and Master Chef Roles & Actions
+# --- 3. Randomized Scientist, Engineer, and Master Chef Roles & Actions ---
 character_action_choice = random.choice([
     "wearing crisp white chef coats and tall toques while carefully measuring gourmet vanilla bean extract and tasting fresh cream samples",
     "wearing engineer goggles and hard hats while inspecting the complex plumbing and stainless-steel pressure valves of a custom ice cream churning machine",
@@ -114,9 +112,9 @@ character_action_choice = random.choice([
     "wearing classic master chef uniforms while meticulously decorating a beautifully crafted multi-tiered ice cream creation"
 ])
 
-# 4. Locked Character Anchors (Matched precisely to the profile picture style)
+# --- 4. Locked Character Anchors (Matched precisely to the profile picture style) ---
 andrew_character = "Andrew, a fluffy golden retriever puppy with warm golden fur, floppy ears, and friendly dark eyes, exactly matching the style in the profile picture"
-petey_character = "Petey, an all-white puppy with a distinct large black patch over his left eye and wearing a simple blue collar, exactly matching the style in the profile picture"
+petey_character = "Petey, an all-white puppy with clean white ears and a distinct black spot exclusively over his left eye, wearing a simple blue collar, exactly matching the style in the profile picture"
 
 image_prompt = (
     f"A high-end 3D animated digital art piece in the distinct visual style of Pixar and Disney, "
@@ -128,44 +126,40 @@ image_prompt = (
 
 print(f"Generating cartoon background image with prompt: {image_prompt}")
 
+# Image Generation Loop
 image_bytes = None
-image_models_to_try = ["gemini-3.1-flash-image", "gemini-3.1-flash-image-preview"]
-
-for img_model in image_models_to_try:
+for attempt in range(2): # Try standard model, then preview if needed
     try:
-        response = client.models.generate_content(
-            model=img_model,
-            contents=image_prompt,
-        )
-        for candidate in response.candidates:
-            for part in candidate.content.parts:
-                if part.inline_data and part.inline_data.data:
-                    image_bytes = part.inline_data.data
-                    break
-            if image_bytes:
-                break
-        if image_bytes:
-            print(f"Successfully generated background image using model: {img_model}")
-            break
+        response = image_model.generate_content(image_prompt)
+        if response.text: # Check if safety filters blocked it
+             print(f"Safety Blocked Image Generation: {response.text}")
+             continue
+        image_bytes = response.candidates[0].content.parts[0].inline_data.data
+        print("Successfully generated background image.")
+        break
     except Exception as e:
-        print(f"Image model {img_model} failed: {e}. Trying next...")
+        print(f"Image generation failed: {e}")
+        time.sleep(5)
 
 if not image_bytes:
-    raise Exception("All Gemini image generation models failed to return image data.")
+    raise Exception("Gemini image generation failed after multiple attempts.")
 
 image_path = "temp_trivia_image.png"
 
-# 5. Process Image & Render Pixel-Perfect Text Box Overlay
+# --- 5. Process Image & Render Pixel-Perfect Text Box Overlay ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
+# Setup Fonts (Use fallback if system fonts aren't available)
 try:
     font = ImageFont.truetype("DejaVuSans.ttf", 18)
     header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
 except IOError:
+    print("Warning: Custom fonts not found. Using default font (text may look different).")
     font = ImageFont.load_default()
     header_font = font
 
+# Calculate box dimensions
 box_x0 = 40
 box_x1 = img_width - 40
 max_text_width = (box_x1 - box_x0) - 50
@@ -195,67 +189,38 @@ total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding
 box_y1 = img_height - 30
 box_y0 = box_y1 - total_box_height
 
+# Draw Overlay
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
 draw_overlay = ImageDraw.Draw(overlay)
 
+# Semi-transparent dark background
 draw_overlay.rounded_rectangle(
-    [box_x0, box_y0, box_x1, box_y1], 
-    radius=16, 
-    fill=(15, 23, 42, 235), 
-    outline=(245, 158, 11, 255),  # Warm amber border for ice cream theme
+    [box_x0, box_y0, box_x1, box_y1],
+    radius=16,
+    fill=(15, 23, 42, 235), # Slate 900 with high opacity
+    outline=(245, 158, 11, 255), # Amber 500 border
     width=3
 )
 
+# Composite overlay onto original image
 img = Image.alpha_composite(img, overlay).convert("RGB")
 draw = ImageDraw.Draw(img)
 
+# Draw Text
 text_x = box_x0 + 25
 text_y = box_y0 + 16
 
-draw.text((text_x, text_y), header_tag, fill=(252, 211, 77, 255), font=header_font)
+# Header
+draw.text((text_x, text_y), header_tag, fill=(252, 211, 77, 255), font=header_font) # Amber 300
 text_y += header_height
 
+# Body Trivia (Wrapped)
 for line in wrapped_lines:
-    draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
+    draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font) # Slate 100
     text_y += line_height
 
 img.save(image_path, "PNG")
 print("Trivia background image with clean text overlay successfully generated and saved!")
 
-# 6. Format Social Media Caption Text
-post_header = make_bold("🍦 THE DAILY SCOOP WITH PETEY & ANDREW 🐾\n\n")
-engagement_cta = (
-    "\n\n" + "🐕 " + make_bold("QUALITY CONTROL APPROVED!") + "\n" +
-    "Andrew and Petey reviewed today's data from the lab and gave it two paws up. " +
-    "What flavor are you tasting today? Let us know below! 👇"
-)
-post_text = post_header + ai_trivia_formatted + engagement_cta
-
-# 7. Exchange/Refresh Facebook Token
-app_id = os.environ["FACEBOOK_APP_ID"]
-app_secret = os.environ["FACEBOOK_APP_SECRET"]
-current_token = os.environ["FACEBOOK_ACCESS_TOKEN"]
-
-refresh_url = "https://graph.facebook.com/v18.0/oauth/access_token"
-refresh_params = {
-    "grant_type": "fb_exchange_token",
-    "client_id": app_id,
-    "client_secret": app_secret,
-    "fb_exchange_token": current_token
-}
-refresh_res = requests.get(refresh_url, params=refresh_params).json()
-active_token = refresh_res.get("access_token", current_token)
-
-# 8. Post the Branded Photo + Caption to Facebook Page Feed
-page_id = os.environ["FACEBOOK_PAGE_ID"]
-post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
-
-with open(image_path, "rb") as img_file:
-    files = {"source": img_file}
-    payload = {
-        "caption": post_text,
-        "published": "true",
-        "access_token": active_token
-    }
-    res = requests.post(post_url, data=payload, files=files)
-    print("Facebook Photo Post Response:", res.json())
+# --- 6. Format Social Media Caption Text ---
+post_header = make_bold("🍦 THE DAILY SCOOP WITH PETEY
