@@ -78,6 +78,9 @@ text_models_to_try = [
     "gemini-flash-latest"
 ]
 
+# Domain stop words to ignore during similarity checks so common words don't block unique posts
+domain_stopwords = {"cream", "answer", "history", "ice", "scoop", "trivia", "question"}
+
 for attempt in range(3):
     trivia_prompt = (
         f"Attempt {attempt+1}: Act as an expert trivia host and culinary historian. "
@@ -106,10 +109,10 @@ for attempt in range(3):
         candidate_lower = candidate_text.lower()
         is_too_similar = False
         for past in recent_history:
-            past_words = set(w for w in past.lower().split() if len(w) > 4)
-            candidate_words = set(w for w in candidate_lower.split() if len(w) > 4)
+            past_words = set(w.strip('.,!?:') for w in past.lower().split() if len(w) > 4) - domain_stopwords
+            candidate_words = set(w.strip('.,!?:') for w in candidate_lower.split() if len(w) > 4) - domain_stopwords
             common_words = past_words.intersection(candidate_words)
-            if len(common_words) >= 3:
+            if len(common_words) >= 4:  # Increased threshold slightly since stopwords are removed
                 is_too_similar = True
                 print(f"Rejected Reel candidate due to keyword overlap: {common_words}")
                 break
@@ -142,9 +145,9 @@ image_prompts_pool = [
     "A magical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a night-time carnival ice cream cart lit by thousands of glowing fairy lights, handing out treats. No signs. Vibrant colors.",
     "A charming 9:16 vertical 3D Disney-style digital art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving homemade churned ice cream in wooden bowls on a rustic old-fashioned country store porch in 1902. Clean wooden architecture with zero text.",
     "A grand 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, presenting an elaborate multi-tiered ice cream cake in a majestic 1910 grand hotel dessert salon. Elegant background with no letters. Cinematic lighting.",
-    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing tiny diving helmets inside an underwater coral-reef ice cream parlor scooping pastel treats. Clean coral backdrop. Vibrant aquatic colors.",
+    "A whimsical 9:16 vertical 3D Disney-style digital art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing tiny diving helmets inside an underwater coral-reef ice cream parlor scooping pastel treats. Clean coral backdrop. Vibrant aquatic colors.",
     "A glowing 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside an enchanted forest treehouse ice cream shoppe surrounded by sparkling mint-chip swirls and fireflies. Magical lighting, no text.",
-    "A bustling 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a 1908 railway station ice cream kiosk with clean architectural pillars and no signs. Warm vintage afternoon sun.",
+    "A bustling 9:16 vertical 3D Disney-style digital art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a 1908 railway station ice cream kiosk with clean architectural pillars and no signs. Warm vintage afternoon sun.",
     "A vintage 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, managing a 1920s jazz-age rooftop ice cream lounge under starlit skies and glowing string lights. Clean city backdrop with no text. Cinematic mood."
 ]
 
@@ -177,7 +180,7 @@ for img_model in image_models_to_try:
 if not image_bytes:
     raise Exception("All image models failed for Reel background generation.")
 
-# --- 3. Process Image and Overlay Top-Positioned Text Box (Moved up higher to Y = 50) ---
+# --- 3. Process Image and Overlay Top-Positioned Text Box (Y = 50) ---
 image_path_png = "temp_reel_image.png"
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
@@ -220,7 +223,6 @@ if wrapped_lines and wrapped_lines[-1] == "":
 padding = 28
 total_box_height = (len(wrapped_lines) * line_height) + (padding * 2)
 
-# Moved up higher to Y = 50 (~0.5" higher than previous 90 position)
 box_y0 = 50
 box_y1 = box_y0 + total_box_height
 
@@ -258,7 +260,6 @@ img.save(image_path_png, "PNG")
 
 # --- 4. Fetch Reliable MP3 Audio & Render MP4 Video via Robust FFmpeg Pipeline ---
 audio_path = "temp_music.mp3"
-# Direct, reliable public domain MP3 audio link (Scott Joplin ragtime piano)
 reliable_audio_url = "https://ia800504.us.archive.org/3/items/TheEntertainerScottJoplin1902/TheEntertainer.mp3"
 
 audio_downloaded = False
@@ -275,7 +276,6 @@ except Exception as e:
 video_path_mp4 = "temp_reel_video.mp4"
 
 if audio_downloaded:
-    # Explicit stream mapping (-map 0:v:0 -map 1:a:0) ensures Facebook recognizes the valid audio track
     ffmpeg_cmd = [
         "ffmpeg", "-loop", "1", "-i", image_path_png,
         "-i", audio_path,
@@ -285,7 +285,6 @@ if audio_downloaded:
         "-shortest", "-y", video_path_mp4
     ]
 else:
-    # Bulletproof fallback using FFmpeg's built-in synth generator so it never registers as silent
     ffmpeg_cmd = [
         "ffmpeg", "-loop", "1", "-i", image_path_png,
         "-f", "lavfi", "-i", "sine=f=440:d=6",
