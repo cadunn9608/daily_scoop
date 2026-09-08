@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import requests
 
 def fetch_live_data_via_gemini(gemini_api_key: str):
-    """Queries Gemini to retrieve structured real-world sales and regional metrics."""
+    """Queries Gemini to retrieve structured sales and regional metrics using verified model fallbacks."""
     client = genai.Client(api_key=gemini_api_key)
     
     prompt = (
@@ -27,11 +27,36 @@ def fetch_live_data_via_gemini(gemini_api_key: str):
         "}"
     )
     
-    print("Fetching live market data via Gemini...")
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-    )
+    # Exact candidate models sequence from pmp-auto-poster
+    candidate_models = [
+        "gemini-3.5-flash",
+        "gemini-3.1-flash",
+        "gemini-3.6-flash",
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite"
+    ]
+    
+    response = None
+    last_error = None
+    
+    for model_name in candidate_models:
+        try:
+            print(f"Attempting live data fetch using model: {model_name}...")
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+            )
+            if response and response.text:
+                print(f"Successfully connected using model: {model_name}")
+                break
+        except Exception as e:
+            last_error = e
+            print(f"⚠️ Model {model_name} encountered an error: {e}. Trying next fallback...")
+            continue
+            
+    if not response or not response.text:
+        print(f"❌ All model fallback options failed. Last error: {last_error}")
+        sys.exit(1)
     
     cleaned_text = response.text.strip()
     if cleaned_text.startswith("```json"):
@@ -46,21 +71,19 @@ def fetch_live_data_via_gemini(gemini_api_key: str):
         return sales_df, regional_df
     except json.JSONDecodeError as e:
         print(f"❌ Error parsing JSON response from Gemini: {e}")
-        print(f"Raw output was: {response.text}")
+        print(f"Raw output received was: {response.text}")
         sys.exit(1)
 
 def run_tensorflow_lstm_analysis(sales_df):
-    """Processes the sales data through a TensorFlow LSTM neural network for trend forecasting."""
+    """Processes sales metrics through a TensorFlow LSTM neural network for trend analysis."""
     print("Executing TensorFlow LSTM time-series analysis...")
     
     sales_values = sales_df['Sales'].values.astype(float)
     
-    # Normalize data for neural network stability
     mean = np.mean(sales_values)
     std = np.std(sales_values) if np.std(sales_values) > 0 else 1.0
     normalized = (sales_values - mean) / std
     
-    # Construct an LSTM model in TensorFlow
     model = tf.keras.Sequential([
         tf.keras.layers.Input(shape=(1, 1)),
         tf.keras.layers.LSTM(16, activation='relu'),
@@ -68,7 +91,6 @@ def run_tensorflow_lstm_analysis(sales_df):
     ])
     model.compile(optimizer='adam', loss='mse')
     
-    # Reshape for LSTM sequence input [samples, time steps, features]
     if len(normalized) > 1:
         X = normalized[:-1].reshape(-1, 1, 1)
         y = normalized[1:].reshape(-1, 1)
@@ -78,7 +100,7 @@ def run_tensorflow_lstm_analysis(sales_df):
     return model
 
 def generate_store_sales_chart(sales_df):
-    """Generates a bar chart comparing Top 20 stores vs. Dr. Bombay sales."""
+    """Generates the store sales bar chart (Top 20 vs. Dr. Bombay)."""
     plt.figure(figsize=(10, 6))
     colors = ['coral' if 'Dr. Bombay' in str(brand) else 'skyblue' for brand in sales_df['Brand']]
     
@@ -95,7 +117,7 @@ def generate_store_sales_chart(sales_df):
     return chart_path
 
 def generate_regional_flavors_chart(regional_df):
-    """Generates a bar chart for top flavors by region for yesterday."""
+    """Generates the regional flavors bar chart for yesterday's performance."""
     plt.figure(figsize=(10, 6))
     labels = regional_df['Region'] + ": " + regional_df['Flavor']
     
@@ -111,7 +133,7 @@ def generate_regional_flavors_chart(regional_df):
     return chart_path
 
 def post_photo_to_facebook(image_path: str, caption: str, page_id: str, access_token: str) -> bool:
-    """Uploads a generated chart image directly to the Facebook Page."""
+    """Uploads a generated chart image directly to the Facebook Page with diagnostics."""
     url = f"https://graph.facebook.com/v21.0/{page_id}/photos"
     
     try:
@@ -125,7 +147,7 @@ def post_photo_to_facebook(image_path: str, caption: str, page_id: str, access_t
                 print(f"Successfully posted chart to Facebook! ID: {res_data['id']}")
                 return True
                 
-            print(f"⚠️ Facebook API Error posting chart: {res_data}")
+            print(f"⚠️ Facebook Graph API Error (Verify Token & Page Permissions): {res_data}")
             return False
             
     except Exception as e:
@@ -143,7 +165,7 @@ def main():
 
     print("Starting AI & Data-Driven Market Intelligence Pipeline...")
 
-    # Step 1: Fetch Live Data via Gemini API
+    # Step 1: Fetch Live Data via Gemini API with verified Model Fallback
     sales_df, regional_df = fetch_live_data_via_gemini(gemini_key)
 
     # Step 2: Run TensorFlow LSTM Neural Network Analysis
