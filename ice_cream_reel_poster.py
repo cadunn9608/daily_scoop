@@ -93,7 +93,7 @@ for attempt in range(3):
         "Line 1: A catchy hook/intro with a symbol (e.g., [★] COOL COLD HISTORY!). "
         "Line 2: The trivia question or setup (e.g., What iconic sweet treat was born from a boy's indecision?). "
         "Line 3: The exciting answer and brief explanation with a symbol (e.g., [►] ANSWER: The Eskimo Pie, invented by an Iowa teacher!). "
-        "Keep the total word count under 50 words so it fits comfortably in a mobile video overlay box. "
+        "Keep the total word count under 40 words so it fits comfortably in a mobile video overlay box with large font. "
         f"{history_exclusion} "
         "Output only the 3 text lines without Markdown bolding asterisks."
     )
@@ -137,66 +137,26 @@ with open(history_file, "a", encoding="utf-8") as f:
     f.write(cleaned_trivia.replace("\n", " ") + "\n")
 print("Saved new unique reel trivia fact to reel_history.txt")
 
-header_tag = "★ DAILY ICE CREAM REEL ★"
 ai_trivia_formatted = make_bold(cleaned_trivia)
 
 # --- 3. Randomized Cartoon Background Settings Pool ---
 setting_choice = random.choice([
-    "a high-tech futuristic ice cream testing laboratory with glowing holographic flavor charts and stainless steel tasting counters",
-    "a cozy, sunlit wooden workshop filled with vintage ice cream churns, recipe notebooks, and colorful ingredient jars",
-    "a whimsical modern kitchen workspace with digital flavor analysis screens and bubbling test tubes of sweet syrups",
+    "a high-tech futuristic ice cream testing laboratory with glowing holographic flavor charts",
     "a retro 1950s soda fountain counter with glittering chrome trim and glowing neon accent lights",
-    "an interstellar spaceship kitchen equipped with zero-gravity refrigeration units and floating dessert spheres",
-    "a magical candy-cane forest workshop with bubbling caramel cauldrons and sparkling sugar crystals",
-    "a cozy Victorian parlor lit by candlelight with velvet armchairs, Persian rugs, and ancient leather-bound recipe books",
-    "a high-altitude mountain observatory with snow-capped window views, brass telescopes, and antique barometers",
-    "a bustling medieval alchemy tower filled with glowing potions, bubbling glass flasks, and ice-crystal instruments",
-    "a tropical tiki-hut testing shack overlooking a sparkling blue lagoon with palm fronds and hanging fairy lights",
     "a steampunk clockwork laboratory with whirring brass gears, ticking gauges, and steam-powered stainless steel churns",
-    "a cozy cabin kitchen during a gentle winter snowstorm with soft frost framing the windowpanes",
-    "an underwater marine biology station with curved glass domes showing colorful coral reefs and swimming sea turtles",
-    "a vibrant carnival midway tent surrounded by colorful bunting, festive paper lanterns, and blue ribbon awards",
-    "a sleek mid-century modern architectural studio with floor-to-ceiling glass windows and minimalist drafting tables",
-    "a subterranean crystal cavern glowing softly with bioluminescent blue quartz crystals and mineral stalactites",
-    "a retro drive-in diner kitchen with black-and-white checkered floors, stainless steel counters, and glowing jukeboxes",
-    "a whimsical treehouse laboratory built inside a giant hollowed-out baobab tree with rope bridges and hanging ferns",
-    "a futuristic lunar base observation dome overlooking the cratered grey moon surface and distant blue Earth",
-    "a classic Parisian patisserie kitchen lightly dusted with powdered sugar, copper pans, and fresh vanilla pods",
-    "a sun-drenched Mediterranean citrus orchard terrace with terracotta tiles, lemon trees, and striped canvas awnings",
-    "a high-speed bullet train dining car zooming smoothly through a scenic alpine mountain landscape",
-    "a cozy lighthouse keeper's room filled with nautical sea charts, brass instruments, and glowing storm lamps",
-    "a mystical wizard's tower study stacked with ancient spellbooks, glowing runes, and floating measuring spoons",
-    "a vintage 1920s jazz club backroom with deep velvet curtains, polished mahogany tables, and warm Edison bulbs",
-    "a bustling artisan marketplace stall in a sunlit Italian piazza surrounded by cobblestones and flowering vines",
-    "a high-tech environmental monitoring outpost nestled deep in an evergreen forest with wooden viewing decks",
-    "a whimsical cloud-castle kitchen floating high above a soft blanket of white cumulus clouds with rainbow light",
-    "a cozy country farmhouse kitchen featuring a heavy wood-burning stove and checkered tablecloths",
-    "a futuristic underwater dome city laboratory with neon-lit aquatic plants and marine research monitors",
-    "a magical toy workshop filled with mechanical wind-up gadgets, painted wooden shelves, and dollhouse displays",
-    "a classic Hollywood movie studio prop room stacked with vintage cameras, director chairs, and theatrical spotlights",
-    "a serene Japanese Zen garden tea house with smooth river rocks, raked gravel paths, and bonsai trees"
+    "a classic Parisian patisserie kitchen lightly dusted with powdered sugar, copper pans, and fresh vanilla pods"
 ])
 
-# --- 4. Randomized Scientist, Engineer, and Master Chef Roles & Actions ---
 character_action_choice = random.choice([
-    "wearing crisp white chef coats and tall toques while carefully measuring gourmet vanilla bean extract and tasting fresh cream samples",
-    "wearing engineer goggles and hard hats while inspecting the complex plumbing and stainless-steel pressure valves of a custom ice cream churning machine",
-    "wearing professional scientist lab coats and safety glasses while examining glowing chemical formulas and color-coded flavor charts on a futuristic digital display",
-    "wearing professional chef aprons and holding wooden tasting spoons while testing the viscosity of rich chocolate fudge and caramel ribbons",
-    "wearing engineer toolbelts and pocket protectors while tuning the precision temperature gauges of a cryogenic flash-freezing unit",
-    "wearing white scientist lab coats and blue latex gloves while peering into microscopes to check fat crystal structures in a smooth dairy blend",
-    "wearing classic master chef jackets and neckerchiefs while proudly rating the sweetness balance of various artisanal fruit purees",
-    "wearing engineer headsets and high-tech utility belts while calibrating automated syrup dispensers on a stainless-steel production line",
-    "wearing scientific safety goggles and lab coats while carefully mixing bubbling liquid nitrogen with sweet cream bases",
-    "wearing classic master chef uniforms while meticulously decorating a beautifully crafted multi-tiered ice cream creation"
+    "wearing crisp white chef coats and tall toques while carefully measuring gourmet vanilla bean extract",
+    "wearing engineer goggles and hard hats while inspecting the complex plumbing of a custom ice cream churning machine"
 ])
 
-# --- 5. Locked Character Anchors ---
-andrew_character = "Andrew, a fluffy golden retriever puppy with warm golden fur, floppy ears, and friendly dark eyes, exactly matching the style in the profile picture"
-petey_character = "Petey, an all-white puppy with clean white ears and a distinct black spot exclusively over his left eye, wearing a simple blue collar, exactly matching the style in the profile picture"
+andrew_character = "Andrew, a fluffy golden retriever puppy with warm golden fur, floppy ears, and friendly dark eyes"
+petey_character = "Petey, an all-white puppy with clean white ears and a distinct black spot exclusively over his left eye, wearing a simple blue collar"
 
 image_prompt = (
-    f"A high-end 3D animated digital art piece in the distinct visual style of Pixar and Disney, "
+    f"A vertical portrait orientation (9:16 aspect ratio) high-end 3D animated digital art piece in the distinct visual style of Pixar and Disney, "
     f"featuring {andrew_character} and {petey_character}, "
     f"working together inside {setting_choice}. "
     f"They are {character_action_choice}. "
@@ -204,28 +164,18 @@ image_prompt = (
 )
 
 image_bytes = None
-image_models_to_try = [
-    "gemini-2.5-flash-image",
-    "gemini-3.1-flash-image",
-    "gemini-3.1-flash-image-preview",
-    "gemini-3-pro-image"
-]
+image_models_to_try = ["gemini-2.5-flash-image", "gemini-3.1-flash-image", "gemini-3-pro-image"]
 
 for img_model in image_models_to_try:
     try:
-        response = client.models.generate_content(
-            model=img_model,
-            contents=image_prompt,
-        )
+        response = client.models.generate_content(model=img_model, contents=image_prompt)
         for candidate in response.candidates:
             for part in candidate.content.parts:
                 if part.inline_data and part.inline_data.data:
                     image_bytes = part.inline_data.data
                     break
-            if image_bytes:
-                break
-        if image_bytes:
-            break
+            if image_bytes: break
+        if image_bytes: break
     except Exception:
         time.sleep(2)
 
@@ -234,45 +184,81 @@ if not image_bytes:
 
 image_path = "temp_reel_image.png"
 
-# --- 6. Process Image & Render Text Box Overlay (Positioned at the TOP) ---
+# --- 6. Image Resizing (9:16 Ratio) & Render Text Box Overlay ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
+
+# Guarantee a 1080x1920 (9:16) image size via center-cropping/resizing
+target_width = 1080
+target_height = 1920
+img_ratio = img.width / img.height
+target_ratio = target_width / target_height
+
+if img_ratio > target_ratio:
+    new_height = target_height
+    new_width = int(new_height * img_ratio)
+else:
+    new_width = target_width
+    new_height = int(new_width / img_ratio)
+
+img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+left = (new_width - target_width) / 2
+top = (new_height - target_height) / 2
+right = (new_width + target_width) / 2
+bottom = (new_height + target_height) / 2
+img = img.crop((left, top, right, bottom))
+
 img_width, img_height = img.size
 
+# Load much larger fonts
 try:
-    font = ImageFont.truetype("DejaVuSans.ttf", 18)
-    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
+    font = ImageFont.truetype("DejaVuSans.ttf", 36)
+    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 44)
 except IOError:
     font = ImageFont.load_default()
     header_font = font
 
-box_x0 = 40
-box_x1 = img_width - 40
-max_text_width = (box_x1 - box_x0) - 50
+# Parse the trivia: Line 1 becomes the yellow header, Lines 2 & 3 become the body
+trivia_parts = [p.strip() for p in cleaned_trivia.split("\n") if p.strip()]
+header_text = trivia_parts[0] if len(trivia_parts) > 0 else "[★] ICE CREAM HISTORY"
+body_text_paragraphs = trivia_parts[1:] if len(trivia_parts) > 1 else []
 
-wrapped_lines = []
-for paragraph in cleaned_trivia.split("\n"):
-    if not paragraph.strip():
-        continue
-    words = paragraph.strip().split()
+box_x0 = 50
+box_x1 = img_width - 50
+max_text_width = (box_x1 - box_x0) - 60
+
+# Word wrap Header
+wrapped_header_lines = []
+current_line = ""
+for word in header_text.split():
+    test_line = f"{current_line} {word}".strip()
+    if header_font.getlength(test_line) <= max_text_width:
+        current_line = test_line
+    else:
+        if current_line: wrapped_header_lines.append(current_line)
+        current_line = word
+if current_line: wrapped_header_lines.append(current_line)
+
+# Word wrap Body
+wrapped_body_lines = []
+for paragraph in body_text_paragraphs:
     current_line = ""
-    for word in words:
+    for word in paragraph.split():
         test_line = f"{current_line} {word}".strip()
         if font.getlength(test_line) <= max_text_width:
             current_line = test_line
-        else:
-            if current_line:
-                wrapped_lines.append(current_line)
-            current_line = word
-    if current_line:
-        wrapped_lines.append(current_line)
+    else:
+        if current_line: wrapped_body_lines.append(current_line)
+        current_line = word
+    if current_line: wrapped_body_lines.append(current_line)
 
-line_height = 24
-header_height = 32
-padding = 20
-total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding * 2)
+header_line_height = 52
+body_line_height = 46
+padding = 35
 
-# Position text box at the TOP of the image so it doesn't block characters/table
-box_y0 = 40
+total_box_height = (len(wrapped_header_lines) * header_line_height) + (len(wrapped_body_lines) * body_line_height) + (padding * 2) + 15
+
+# Top-placed box
+box_y0 = 120
 box_y1 = box_y0 + total_box_height
 
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -280,46 +266,65 @@ draw_overlay = ImageDraw.Draw(overlay)
 
 draw_overlay.rounded_rectangle(
     [box_x0, box_y0, box_x1, box_y1],
-    radius=16,
+    radius=24,
     fill=(15, 23, 42, 235),
     outline=(245, 158, 11, 255),
-    width=3
+    width=4
 )
 
 img = Image.alpha_composite(img, overlay).convert("RGB")
 draw = ImageDraw.Draw(img)
 
-text_x = box_x0 + 25
-text_y = box_y0 + 16
+text_x = box_x0 + 30
+text_y = box_y0 + padding
 
-draw.text((text_x, text_y), header_tag, fill=(252, 211, 77, 255), font=header_font)
-text_y += header_height
+# Draw the dynamic Yellow Header
+for line in wrapped_header_lines:
+    draw.text((text_x, text_y), line, fill=(252, 211, 77, 255), font=header_font)
+    text_y += header_line_height
 
-for line in wrapped_lines:
+text_y += 15 # Gap between header and body
+
+# Draw the white Body Text
+for line in wrapped_body_lines:
     draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
-    text_y += line_height
+    text_y += body_line_height
 
 img.save(image_path, "PNG")
 
-# --- 7. Convert Image to MP4 Video with FFmpeg for Reels ---
+# --- 7. Download Music & Convert Image to MP4 Video with FFmpeg ---
+audio_path = "background_music.ogg"
 video_path = "temp_reel_video.mp4"
-print("Converting image to 6-second MP4 video with FFmpeg...")
+
+if not os.path.exists(audio_path):
+    print("Downloading royalty-free background music...")
+    music_url = "https://upload.wikimedia.org/wikipedia/commons/d/d3/Scott_Joplin_-_The_Entertainer_%281902%29.ogg"
+    try:
+        music_res = requests.get(music_url)
+        music_res.raise_for_status()
+        with open(audio_path, "wb") as f:
+            f.write(music_res.content)
+    except Exception as e:
+        print(f"Warning: Could not download music. Please place a file named {audio_path} manually.")
+
+print("Converting image and music to 1080x1920 6-second MP4 video with FFmpeg...")
 
 ffmpeg_cmd = [
     "ffmpeg", "-y",
     "-loop", "1",
     "-i", image_path,
-    "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+    "-i", audio_path,
     "-c:v", "libx264",
     "-t", "6",
     "-pix_fmt", "yuv420p",
     "-c:a", "aac",
+    "-b:a", "192k",
     "-shortest",
     video_path
 ]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Video reel file created successfully.")
+print("Video reel file created successfully with audio.")
 
 # --- 8. Format Social Media Caption Text ---
 post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
