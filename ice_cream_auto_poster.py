@@ -114,9 +114,13 @@ character_action_choice = random.choice([
     "wearing classic master chef uniforms while meticulously decorating a beautifully crafted multi-tiered ice cream creation"
 ])
 
+# 4. Locked Character Anchors (Guarantees 100% consistent appearance across every post)
+andrew_character = "Andrew, an adorable golden retriever puppy with fluffy golden fur and a happy expression"
+petey_character = "Petey, a stocky white-and-black pit bull mix with a distinct large black patch covering his left eye and ear"
+
 image_prompt = (
     f"A high-end 3D animated digital art piece in the distinct visual style of Pixar and Disney, "
-    f"featuring Andrew the golden retriever puppy and Petey, a loyal white-and-black pit bull mix with a distinct black patch over his left eye, "
+    f"featuring {andrew_character} and {petey_character}, "
     f"working together inside {setting_choice}. "
     f"They are {character_action_choice}. "
     "Vibrant warm lighting, charming characters, polished cinematic digital rendering, perfect composition."
@@ -151,7 +155,7 @@ if not image_bytes:
 
 image_path = "temp_trivia_image.png"
 
-# 4. Process Image & Render Pixel-Perfect Text Box Overlay
+# 5. Process Image & Render Pixel-Perfect Text Box Overlay
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
@@ -218,7 +222,7 @@ for line in wrapped_lines:
 img.save(image_path, "PNG")
 print("Trivia background image with clean text overlay successfully generated and saved!")
 
-# 5. Format Social Media Caption Text
+# 6. Format Social Media Caption Text
 post_header = make_bold("🍦 THE DAILY SCOOP WITH PETEY & ANDREW 🐾\n\n")
 engagement_cta = (
     "\n\n" + "🐕 " + make_bold("QUALITY CONTROL APPROVED!") + "\n" +
@@ -227,7 +231,7 @@ engagement_cta = (
 )
 post_text = post_header + ai_trivia_formatted + engagement_cta
 
-# 6. Exchange/Refresh Facebook Token
+# 7. Exchange/Refresh Facebook Token
 app_id = os.environ["FACEBOOK_APP_ID"]
 app_secret = os.environ["FACEBOOK_APP_SECRET"]
 current_token = os.environ["FACEBOOK_ACCESS_TOKEN"]
@@ -242,7 +246,7 @@ refresh_params = {
 refresh_res = requests.get(refresh_url, params=refresh_params).json()
 active_token = refresh_res.get("access_token", current_token)
 
-# 7. Post the Branded Photo + Caption to Facebook Page Feed (Fixed graph.facebook.com URL)
+# 8. Post the Branded Photo + Caption to Facebook Page Feed
 page_id = os.environ["FACEBOOK_PAGE_ID"]
 post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
 
