@@ -293,31 +293,45 @@ for line in wrapped_body_lines:
 
 img.save(image_path, "PNG")
 
-# --- 7. Locally Generate Upbeat Background Music (Zero Downloads Needed) ---
+# --- 7. Locally Generate Rich Multi-Note Synth Chords (Warm Instrument Timbre) ---
 audio_path = "background_music.wav"
 video_path = "temp_reel_video.mp4"
 
-print("Generating upbeat local background melody...")
+print("Generating rich multi-note synth chord melody...")
 sample_rate = 44100
 duration = 6.0
 num_samples = int(sample_rate * duration)
 
-# Cheerful music-box arpeggio note frequencies (C Major tune)
-notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 659.25, 523.25, 659.25]
-note_duration = duration / len(notes)
+# Multi-note chord progression (C Major -> A minor -> F Major -> G Major)
+chords = [
+    [261.63, 329.63, 392.00, 523.25],  # C Major chord
+    [220.00, 261.63, 329.63, 440.00],  # A minor chord
+    [349.23, 440.00, 523.25, 698.46],  # F Major chord
+    [392.00, 493.88, 587.33, 783.99]   # G Major chord
+]
+chord_duration = duration / len(chords)
 
 audio_data = []
 for i in range(num_samples):
     t = i / sample_rate
-    note_idx = int(t / note_duration) % len(notes)
-    freq = notes[note_idx]
+    chord_idx = int(t / chord_duration) % len(chords)
+    current_chord = chords[chord_idx]
     
-    local_t = t % note_duration
-    envelope = math.sin(local_t * math.pi / note_duration) # Smooth note fade
+    local_t = t % chord_duration
+    # Music-box envelope (pluck attack with gentle decay)
+    envelope = math.exp(-3.5 * (local_t % (chord_duration / 2)))
     
-    # Soft music box tone (sine wave + harmonic overtone)
-    val = math.sin(2 * math.pi * freq * t) * 0.4 + math.sin(2 * math.pi * (freq * 1.5) * t) * 0.15
-    val *= envelope * 0.6
+    val = 0.0
+    for freq in current_chord:
+        # Layer harmonics (fundamental + 2nd & 3rd overtones) for a rich instrument sound
+        wave_val = (
+            math.sin(2 * math.pi * freq * t) * 0.5 +
+            math.sin(2 * math.pi * freq * 2 * t) * 0.25 +
+            math.sin(2 * math.pi * freq * 3 * t) * 0.125
+        )
+        val += wave_val
+        
+    val = (val / len(current_chord)) * envelope * 0.45
     
     sample = int(val * 32767)
     audio_data.append(struct.pack('<h', max(-32768, min(32767, sample))))
@@ -328,10 +342,10 @@ with wave.open(audio_path, "w") as wav_file:
     wav_file.setframerate(sample_rate)
     wav_file.writeframes(b''.join(audio_data))
 
-print("Local audio melody generated successfully.")
+print("Rich chord audio generated successfully.")
 
 # --- 8. Convert Image and Audio to MP4 Video with FFmpeg ---
-print("Converting image and audio to 1080x1920 6-second MP4 video with FFmpeg...")
+print("Converting image and rich audio to 1080x1920 6-second MP4 video with FFmpeg...")
 ffmpeg_cmd = [
     "ffmpeg", "-y",
     "-loop", "1",
@@ -347,7 +361,7 @@ ffmpeg_cmd = [
 ]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Video reel file created successfully with active audio.")
+print("Video reel file created successfully with multi-instrument synth chords.")
 
 # --- 9. Format Social Media Caption Text ---
 post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
@@ -377,4 +391,4 @@ with open(video_path, "rb") as vid_file:
         else:
             print(f"Failed to post Reel to Facebook: {res_data}")
     except Exception as e:
-        print(f"Exception occurred while posting Reel to Facebook: {e}")
+            print(f"Exception occurred while posting Reel to Facebook: {e}")
