@@ -2,7 +2,7 @@ name: Daily Ice Cream Trivia Poster
 
 on:
   schedule:
-    # Runs every day at 8:00 AM UTC (adjust as needed for your local time)
+    # Runs every day at 8:00 AM UTC
     - cron: '0 8 * * *'
   workflow_dispatch: # Allows manual triggers from the GitHub Actions tab
 
@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
+          # Removed cache: 'pip' to prevent missing file errors
 
       - name: Install Dependencies
         run: |
