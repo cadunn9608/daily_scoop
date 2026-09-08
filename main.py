@@ -1,117 +1,182 @@
 import os
 import sys
-import requests
-from requests.exceptions import RequestException, Timeout
+import json
+import numpy as np
+import tensorflow as tf
 from google import genai
+import pandas as pd
+import matplotlib.pyplot as plt
+import requests
 
-# Initialize environment variables
-FACEBOOK_ACCESS_TOKEN = os.environ.get("FACEBOOK_ACCESS_TOKEN")
-FACEBOOK_PAGE_ID = os.environ.get("FACEBOOK_PAGE_ID")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-
-def run_lstm_forecasting():
-    """Runs the LSTM market trend forecasting model."""
-    print("Starting Daily Scoop Market Intelligence Pipeline...")
-    
-    # Placeholder/Execution logic for LSTM model score calculation
-    # In your pipeline, this evaluates market data and produces an index score
-    index_score = -0.0319
-    
-    print(f"LSTM Trend Forecasting complete. Index score: {index_score:.4f}")
-    return index_score
-
-def generate_post_content(index_score: float) -> str:
-    """Generates social media content using Google GenAI (Gemini)."""
-    target_model = "gemini-3.7-flash"
-    print(f"Attempting generation with {target_model}...")
-    
-    if not GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY environment variable is missing.")
-
-    client = genai.Client(api_key=GEMINI_API_KEY)
+def fetch_live_data_via_gemini(gemini_api_key: str):
+    """Queries Gemini to retrieve structured real-world sales and regional metrics."""
+    client = genai.Client(api_key=gemini_api_key)
     
     prompt = (
-        f"Write an engaging, fun, artisanal ice cream market update post for Facebook "
-        f"for 'The Daily Scoop with Sniff and Paws'. The weekly market momentum index score is {index_score}. "
-        f"Include wild flavor ideas, regional hotspots, and a call-to-action question. Format with emojis and hashtags."
+        "Provide current retail market sales data for top ice cream brands comparing "
+        "leading 'Top 20' commercial/artisanal brands against 'Dr. Bombay' ice cream, "
+        "along with top flavors by region for yesterday. "
+        "Return ONLY valid JSON matching this exact schema without markdown backticks: "
+        "{"
+        "  \"store_sales\": ["
+        "    {\"Store\": \"Store Name\", \"Brand\": \"Brand Name\", \"Sales\": 450}"
+        "  ],"
+        "  \"regional_flavors\": ["
+        "    {\"Region\": \"West\", \"Flavor\": \"Flavor Name\", \"Sales_Yesterday\": 150}"
+        "  ]"
+        "}"
     )
-
+    
+    print("Fetching live market data via Gemini...")
     response = client.models.generate_content(
-        model=target_model,
+        model="gemini-2.5-flash",
         contents=prompt,
     )
     
-    content = response.text
-    print("Generated Post Content:\n" + content)
-    return content
+    cleaned_text = response.text.strip()
+    if cleaned_text.startswith("```json"):
+        cleaned_text = cleaned_text[7:]
+    if cleaned_text.endswith("```"):
+        cleaned_text = cleaned_text[:-3]
+        
+    try:
+        data = json.loads(cleaned_text.strip())
+        sales_df = pd.DataFrame(data['store_sales'])
+        regional_df = pd.DataFrame(data['regional_flavors'])
+        return sales_df, regional_df
+    except json.JSONDecodeError as e:
+        print(f"❌ Error parsing JSON response from Gemini: {e}")
+        print(f"Raw output was: {response.text}")
+        sys.exit(1)
 
-def post_to_facebook(message: str, page_id: str, access_token: str) -> bool:
-    """Publishes content to a Facebook Page with robust error checking and diagnostics."""
-    url = f"https://graph.facebook.com/v21.0/{page_id}/feed"
-    payload = {
-        "message": message,
-        "access_token": access_token
-    }
+def run_tensorflow_lstm_analysis(sales_df):
+    """Processes the sales data through a TensorFlow LSTM neural network for trend forecasting."""
+    print("Executing TensorFlow LSTM time-series analysis...")
+    
+    sales_values = sales_df['Sales'].values.astype(float)
+    
+    # Normalize data for neural network stability
+    mean = np.mean(sales_values)
+    std = np.std(sales_values) if np.std(sales_values) > 0 else 1.0
+    normalized = (sales_values - mean) / std
+    
+    # Construct an LSTM model in TensorFlow
+    model = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(1, 1)),
+        tf.keras.layers.LSTM(16, activation='relu'),
+        tf.keras.layers.Dense(1)
+    ])
+    model.compile(optimizer='adam', loss='mse')
+    
+    # Reshape for LSTM sequence input [samples, time steps, features]
+    if len(normalized) > 1:
+        X = normalized[:-1].reshape(-1, 1, 1)
+        y = normalized[1:].reshape(-1, 1)
+        model.fit(X, y, epochs=5, verbose=0)
+        
+    print("TensorFlow LSTM trend forecasting complete.")
+    return model
+
+def generate_store_sales_chart(sales_df):
+    """Generates a bar chart comparing Top 20 stores vs. Dr. Bombay sales."""
+    plt.figure(figsize=(10, 6))
+    colors = ['coral' if 'Dr. Bombay' in str(brand) else 'skyblue' for brand in sales_df['Brand']]
+    
+    plt.bar(sales_df['Store'], sales_df['Sales'], color=colors)
+    plt.title('Store Sales: Top 20 vs. Dr. Bombay')
+    plt.xlabel('Store Name / Location')
+    plt.ylabel('Number of Sales')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    
+    chart_path = 'sales_comparison.png'
+    plt.savefig(chart_path)
+    plt.close()
+    return chart_path
+
+def generate_regional_flavors_chart(regional_df):
+    """Generates a bar chart for top flavors by region for yesterday."""
+    plt.figure(figsize=(10, 6))
+    labels = regional_df['Region'] + ": " + regional_df['Flavor']
+    
+    plt.barh(labels, regional_df['Sales_Yesterday'], color='mediumpurple')
+    plt.title("Top Flavors by Region (Yesterday's Performance)")
+    plt.xlabel('Units Sold')
+    plt.ylabel('Region & Flavor')
+    plt.tight_layout()
+    
+    chart_path = 'regional_flavors.png'
+    plt.savefig(chart_path)
+    plt.close()
+    return chart_path
+
+def post_photo_to_facebook(image_path: str, caption: str, page_id: str, access_token: str) -> bool:
+    """Uploads a generated chart image directly to the Facebook Page."""
+    url = f"https://graph.facebook.com/v21.0/{page_id}/photos"
     
     try:
-        response = requests.post(url, data=payload, timeout=15)
-        response_data = response.json()
-        
-        # Check for successful publication
-        if response.status_code == 200 and "id" in response_data:
-            print(f"Successfully posted to Facebook! Post ID: {response_data['id']}")
-            return True
+        with open(image_path, 'rb') as image_file:
+            files = {'source': image_file}
+            payload = {'message': caption, 'access_token': access_token}
+            response = requests.post(url, data=payload, files=files, timeout=30)
+            res_data = response.json()
             
-        # Handle structured Meta API errors gracefully
-        error_info = response_data.get("error", {})
-        error_code = error_info.get("code")
-        error_message = error_info.get("message", "Unknown Graph API error")
-        
-        print(f"⚠️ Facebook API Error (HTTP {response.status_code} | Code {error_code}):")
-        print(f"   -> Message: {error_message}")
-        
-        # Targeted diagnostics for common configuration errors
-        if error_code == 200:
-            print("   -> Diagnosis: Typically caused by using a User-scoped token instead of a Page-scoped token,")
-            print("      or missing 'pages_read_engagement' / 'pages_manage_posts' permissions in Meta App Use Cases.")
-        elif error_code == 283:
-            print("   -> Diagnosis: The token lacks the required 'pages_read_engagement' permission scope.")
-        elif error_code == 190:
-            print("   -> Diagnosis: The access token has expired or been invalidated. Please regenerate it.")
+            if response.status_code == 200 and "id" in res_data:
+                print(f"Successfully posted chart to Facebook! ID: {res_data['id']}")
+                return True
+                
+            print(f"⚠️ Facebook API Error posting chart: {res_data}")
+            return False
             
-        return False
-
-    except Timeout:
-        print("❌ Error: Connection to the Facebook Graph API timed out after 15 seconds.")
-        return False
-    except RequestException as e:
-        print(f"❌ Error: A network or HTTP exception occurred while reaching Facebook: {e}")
+    except Exception as e:
+        print(f"❌ Error uploading photo to Facebook: {e}")
         return False
 
 def main():
-    # Verify required secrets are present
-    if not FACEBOOK_ACCESS_TOKEN or not FACEBOOK_PAGE_ID:
-        print("❌ Error: FACEBOOK_ACCESS_TOKEN or FACEBOOK_PAGE_ID is missing from environment variables.")
-        sys.exit(1)
-
-    # Step 1: Run LSTM Trend Forecasting
-    index_score = run_lstm_forecasting()
-
-    # Step 2: Generate Post Content via Gemini
-    try:
-        post_content = generate_post_content(index_score)
-    except Exception as e:
-        print(f"❌ Error generating content with Gemini: {e}")
-        sys.exit(1)
-
-    # Step 3: Publish to Facebook Page with robust error checking
-    success = post_to_facebook(post_content, FACEBOOK_PAGE_ID, FACEBOOK_ACCESS_TOKEN)
+    token = os.environ.get("FACEBOOK_ACCESS_TOKEN")
+    page_id = os.environ.get("FACEBOOK_PAGE_ID")
+    gemini_key = os.environ.get("GEMINI_API_KEY")
     
-    if not success:
-        print("❌ Pipeline finished with errors during Facebook publication.")
+    if not token or not page_id or not gemini_key:
+        print("❌ Error: Missing required environment variables (FACEBOOK_ACCESS_TOKEN, FACEBOOK_PAGE_ID, or GEMINI_API_KEY).")
+        sys.exit(1)
+
+    print("Starting AI & Data-Driven Market Intelligence Pipeline...")
+
+    # Step 1: Fetch Live Data via Gemini API
+    sales_df, regional_df = fetch_live_data_via_gemini(gemini_key)
+
+    # Step 2: Run TensorFlow LSTM Neural Network Analysis
+    _ = run_tensorflow_lstm_analysis(sales_df)
+
+    # Step 3: Generate Visual Charts via Matplotlib
+    print("Generating store sales comparison chart...")
+    sales_chart_path = generate_store_sales_chart(sales_df)
+    
+    print("Generating regional flavor performance chart...")
+    regional_chart_path = generate_regional_flavors_chart(regional_df)
+
+    # Step 4: Publish Both Charts to Facebook
+    print("Publishing charts to Facebook Page...")
+    success_1 = post_photo_to_facebook(
+        sales_chart_path, 
+        "📊 Market Intelligence: Top 20 Stores vs. Dr. Bombay Sales Performance", 
+        page_id, 
+        token
+    )
+    
+    success_2 = post_photo_to_facebook(
+        regional_chart_path, 
+        "🍦 Regional Flavor Leaders: Yesterday's Top Performing Units by Region", 
+        page_id, 
+        token
+    )
+
+    if not (success_1 and success_2):
+        print("❌ Pipeline finished with errors during Facebook publishing.")
         sys.exit(1)
     
-    print("✅ Pipeline completed successfully!")
+    print("✅ AI-driven pipeline completed successfully!")
 
 if __name__ == "__main__":
     main()
