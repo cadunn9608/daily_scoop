@@ -1,0 +1,36 @@
+name: Daily Ice Cream Trivia Poster
+
+on:
+  schedule:
+    # Runs every day at 8:00 AM UTC (adjust as needed for your local time)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allows manual triggers from the GitHub Actions tab
+
+jobs:
+  post-trivia:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pillow google-genai
+
+      - name: Run Ice Cream Auto-Poster Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
+          FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
+          FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+        run: |
+          python ice_cream_auto_poster.py
