@@ -129,38 +129,23 @@ with open(history_file, "a", encoding="utf-8") as f:
     f.write(cleaned_trivia.replace("\n", " ") + "\n")
 print("Saved new unique reel trivia fact to reel_history.txt")
 
-# --- 2. Generate Vertical 9:16 Background Image with 30 Randomized Settings ---
+# --- 2. Generate Vertical 9:16 Background Image (Cleaned of Background Signs/Text) ---
 image_prompts_pool = [
-    "A stunning 9:16 vertical 3D Pixar-style digital art piece featuring Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, running a turn-of-the-century horse-drawn ice cream wagon on a bustling 1900 cobblestone New York street. Vibrant colors, cinematic vertical composition.",
-    "A whimsical 9:16 vertical 3D Disney-style digital art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, operating a gleaming Victorian ice cream parlor with stained glass windows and polished brass fixtures. Warm cinematic lighting, ultra-detailed.",
-    "A magical 9:16 vertical 3D Pixar-style art piece showing Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving towering waffle cones at a glowing 1900s world's fair ice cream pavilion under striped canvas tents. Vibrant and detailed.",
-    "A charming 9:16 vertical 3D Disney-style digital art piece with Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, mixing colorful ice cream sodas behind a mahogany counter in a cozy 1905 apothecary soda fountain. Warm vintage colors.",
-    "An enchanted 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving steaming hot fudge sundaes inside a cozy winter chalet in 1910 by a glowing stone fireplace. Cinematic lighting.",
-    "A bright 9:16 vertical 3D Disney-style digital art piece showing Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing sailor caps at a 1920s seaside boardwalk ice cream stand as colorful waves crash behind them. Vibrant summer colors.",
-    "A whimsical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, operating a steampunk ice cream factory filled with copper pipes and swirling vanilla soft-serve while wearing tiny goggles. Ultra-detailed.",
-    "A classic 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, standing by a 1900 soda shop counter decorated with vintage glass sprinkle jars and bowties. Warm nostalgic lighting.",
-    "A magical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a night-time carnival ice cream cart lit by thousands of glowing fairy lights, handing out treats. Vibrant colors.",
-    "A charming 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving homemade churned ice cream in wooden bowls on a rustic old-fashioned country store porch in 1902. Detailed textures.",
-    "A grand 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, presenting an elaborate multi-tiered ice cream cake in a majestic 1910 grand hotel dessert salon. Cinematic lighting.",
-    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing tiny diving helmets inside an underwater coral-reef ice cream parlor scooping pastel treats. Vibrant aquatic colors.",
-    "A glowing 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside an enchanted forest treehouse ice cream shoppe surrounded by sparkling mint-chip swirls and fireflies. Magical lighting.",
-    "A bustling 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a 1908 railway station ice cream kiosk waving to passengers holding melting cones. Warm vintage afternoon sun.",
-    "A vintage 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, managing a 1920s jazz-age rooftop ice cream lounge under starlit skies and glowing string lights. Cinematic mood.",
-    "A magical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, floating on fluffy pink clouds holding golden spoons inside a cloud-kingdom spun-sugar ice cream factory. Soft pastel tones.",
-    "A charming 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving artisanal gelato from a wooden cart in a European cobblestone piazza cafe in 1904. Warm sunny lighting.",
-    "A cozy 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside an antique-filled inventors workshop testing a brand-new mechanical ice cream churning apparatus. Detailed workshop environment.",
-    "A vibrant 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving spiced apple-cinnamon ice cream from wooden crates in an autumn harvest orchard in 1906. Warm golden hour light.",
-    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside a moonlit desert oasis ice cream tent glowing with lanterns, serving cooling treats. Magical starry backdrop.",
-    "A classic 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, on a 1912 grand ocean liner ship deck ice cream parlor looking out over blue open ocean waves. Cinematic lighting.",
-    "A magical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing winter scarves and serving peppermint swirl cones inside a candy-cane forest ice cream cottage. Bright festive colors.",
-    "A bustling 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at an early-morning 1903 farmers market ice cream stand surrounded by fresh berries and cream. Vibrant morning light.",
-    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, running a vintage clockwork-themed ice cream parlor with giant ticking gears and golden counters. Detailed retro-futurism.",
-    "A glowing 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, mixing neon-glowing blueberry scoops inside a bioluminescent magical grotto ice cream cave. Magical glowing colors.",
-    "A charming 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, running a 1915 suburban front porch lemonade and ice cream stand while wearing striped vests. Warm sunny afternoon.",
-    "A majestic 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing royal chef hats and dusting cocoa powder in a castle banquet hall ice cream kitchen in 1900. Rich dramatic lighting.",
-    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, balancing tall milkshakes at an early-era retro drive-in soda fountain counter. Bright cheerful lighting.",
-    "A sunlit 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing colorful flower leis under palm fronds at a tropical beach tiki ice cream hut in 1907. Vibrant tropical colors.",
-    "A magical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, steering a floating airship ice cream balloon drifting gracefully over green hills while scooping gelato. Cinematic vista."
+    "A stunning 9:16 vertical 3D Pixar-style digital art piece featuring Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, running a turn-of-the-century horse-drawn ice cream wagon on a bustling 1900 cobblestone New York street. No readable background text or signs. Vibrant colors, cinematic vertical composition.",
+    "A whimsical 9:16 vertical 3D Disney-style digital art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, operating a gleaming Victorian ice cream parlor with stained glass windows and polished brass fixtures. Clean background with no text. Warm cinematic lighting, ultra-detailed.",
+    "A magical 9:16 vertical 3D Pixar-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving towering waffle cones at a glowing 1900s world's fair ice cream pavilion under striped canvas tents. Clean background architecture with no letters or words. Vibrant and detailed.",
+    "A charming 9:16 vertical 3D Disney-style digital art piece with Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, mixing colorful ice cream sodas behind a mahogany counter in a cozy 1905 apothecary soda fountain. No background signs or text. Warm vintage colors.",
+    "An enchanted 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving steaming hot fudge sundaes inside a cozy winter chalet in 1910 by a glowing stone fireplace. Clean interior design with no letters. Cinematic lighting.",
+    "A bright 9:16 vertical 3D Disney-style digital art piece showing Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing sailor caps at a 1920s seaside boardwalk ice cream stand as colorful waves crash behind them. No signs or text. Vibrant summer colors.",
+    "A whimsical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, operating a steampunk ice cream factory filled with copper pipes and swirling vanilla soft-serve while wearing tiny goggles. Ultra-detailed, no text.",
+    "A classic 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, standing by a 1900 soda shop counter decorated with vintage glass sprinkle jars and bowties. Clean background with no text. Warm nostalgic lighting.",
+    "A magical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a night-time carnival ice cream cart lit by thousands of glowing fairy lights, handing out treats. No signs. Vibrant colors.",
+    "A charming 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving homemade churned ice cream in wooden bowls on a rustic old-fashioned country store porch in 1902. Clean wooden architecture with zero text.",
+    "A grand 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, presenting an elaborate multi-tiered ice cream cake in a majestic 1910 grand hotel dessert salon. Elegant background with no letters. Cinematic lighting.",
+    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing tiny diving helmets inside an underwater coral-reef ice cream parlor scooping pastel treats. Clean coral backdrop. Vibrant aquatic colors.",
+    "A glowing 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside an enchanted forest treehouse ice cream shoppe surrounded by sparkling mint-chip swirls and fireflies. Magical lighting, no text.",
+    "A bustling 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a 1908 railway station ice cream kiosk with clean architectural pillars and no signs. Warm vintage afternoon sun.",
+    "A vintage 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, managing a 1920s jazz-age rooftop ice cream lounge under starlit skies and glowing string lights. Clean city backdrop with no text. Cinematic mood."
 ]
 
 image_prompt = random.choice(image_prompts_pool)
@@ -192,7 +177,7 @@ for img_model in image_models_to_try:
 if not image_bytes:
     raise Exception("All image models failed for Reel background generation.")
 
-# --- 3. Process Image and Overlay Top-Positioned Text Box with Drop Shadow ---
+# --- 3. Process Image and Overlay Top-Positioned Text Box (Moved up ~0.5" higher) ---
 image_path_png = "temp_reel_image.png"
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
@@ -235,8 +220,8 @@ if wrapped_lines and wrapped_lines[-1] == "":
 padding = 28
 total_box_height = (len(wrapped_lines) * line_height) + (padding * 2)
 
-# Position high up near the TOP (Y = 160) so characters and details below remain fully visible
-box_y0 = 160
+# Moved up higher to Y = 90 (~0.5" higher than previous 160 position)
+box_y0 = 90
 box_y1 = box_y0 + total_box_height
 
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -271,7 +256,7 @@ for i, line in enumerate(wrapped_lines):
 
 img.save(image_path_png, "PNG")
 
-# --- 4. Fetch Random Upbeat Public Domain Music & Render MP4 Video via FFmpeg ---
+# --- 4. Fetch Music & Render MP4 Video via Robust FFmpeg Audio Pipeline ---
 audio_path = "temp_music.mp3"
 ragtime_audio_pool = [
     "https://upload.wikimedia.org/wikipedia/commons/d/d4/Scott_Joplin_-_Maple_Leaf_Rag_%28piano_roll%29.ogg",
@@ -288,18 +273,19 @@ try:
         with open(audio_path, "wb") as f:
             f.write(audio_res.content)
         audio_downloaded = True
-        print("Successfully downloaded random upbeat ragtime music track!")
+        print("Successfully downloaded upbeat ragtime music track!")
 except Exception as e:
-    print(f"Warning: Could not download background music ({e}), falling back to silence.")
+    print(f"Warning: Could not download background music ({e}), falling back to silent track.")
 
 video_path_mp4 = "temp_reel_video.mp4"
 
 if audio_downloaded:
+    # Explicit audio resampling and formatting flags to ensure playback compatibility on Facebook Reels
     ffmpeg_cmd = [
         "ffmpeg", "-loop", "1", "-i", image_path_png,
         "-i", audio_path,
         "-c:v", "libx264", "-t", "6", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-b:a", "128k",
+        "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
         "-shortest", "-y", video_path_mp4
     ]
 else:
@@ -307,12 +293,12 @@ else:
         "ffmpeg", "-loop", "1", "-i", image_path_png,
         "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
         "-c:v", "libx264", "-t", "6", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-b:a", "128k",
+        "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
         "-shortest", "-y", video_path_mp4
     ]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Reel video and background music rendered successfully!")
+print("Reel video and background music rendered successfully with audio track!")
 
 # --- 5. Publish to Facebook Reels API with Correct Binary Upload ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
