@@ -242,9 +242,9 @@ refresh_params = {
 refresh_res = requests.get(refresh_url, params=refresh_params).json()
 active_token = refresh_res.get("access_token", current_token)
 
-# 7. Post the Branded Photo + Caption to Facebook Page Feed
+# 7. Post the Branded Photo + Caption to Facebook Page Feed (Fixed graph.facebook.com URL)
 page_id = os.environ["FACEBOOK_PAGE_ID"]
-post_url = f"https://graph.facebook.0/v18.0/{page_id}/photos"
+post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
 
 with open(image_path, "rb") as img_file:
     files = {"source": img_file}
