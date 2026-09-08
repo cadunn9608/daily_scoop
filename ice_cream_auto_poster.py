@@ -14,14 +14,55 @@ def make_bold(text):
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-# 1. Randomized Ice Cream Trivia Categories to Ensure Unique Daily Content
+# 1. Expanded Randomized Ice Cream Trivia Categories (Mixing History + Post-1990 Modern Trends)
 trivia_categories = [
-    "historical origins of ice cream and presidential recipes",
-    "bizarre and unusual historical ice cream flavors",
-    "ice cream food science and freezing point depression",
-    "global ice cream traditions and unique international styles",
+    # Post-1990 Modern Trends & Innovations
+    "the 1990s craft ice cream renaissance and the rise of local artisanal farm-to-cone creameries",
+    "the viral social media explosion of rolled ice cream brought over from Southeast Asian street markets in the 2010s",
+    "the modern culinary trend of savory ice cream flavors like extra virgin olive oil, sea salt, and smoked bacon popularized in the 2000s",
+    "the 2010s boom of plant-based vegan ice creams made from innovative oat milk, cashew cream, and coconut bases",
+    "the 2000s liquid nitrogen ice cream laboratory phenomenon popularized by molecular gastronomy chefs",
+    "the Guinness World Record set in 2022 for the most expensive scoop of ice cream sold at a Japanese luxury cafe",
+    "the modern trend of boozy adult ice cream bars infused with craft IPAs and artisanal bourbons in the 2010s",
+    "the 2020s TikTok and Instagram viral trends of cloud cotton candy ice cream cones",
+    "the rise of small-batch nitrogen-chilled ice cream shops revolutionizing dessert science in the modern era",
+    "the cultural phenomenon of specialty ice cream festival competitions taking place across major cities since the late 2000s",
+    "the modern science of using liquid nitrogen flash-freezing to eliminate ice crystals for ultra-smooth texture",
+    "the 2010s surge in gourmet ice cream sandwich trucks combining fresh-baked cookies with small-batch scoops",
+    
+    # Classic History & Food Science
+    "historical origins of ice cream during the Tang Dynasty in China",
+    "presidential ice cream lovers like George Washington and Thomas Jefferson",
+    "bizarre and unusual historical ice cream flavors like parmesan or cod roe",
+    "ice cream food science, freezing point depression, and fat crystal formation",
+    "global ice cream traditions and unique international styles like Italian gelato or Turkish dondurma",
     "fun manufacturing and production milestones through history",
-    "classic ice cream parlour inventions and sundae folklore"
+    "classic ice cream parlour inventions and the accidental origin of the ice cream sundae",
+    "the invention of the waffle cone at the 1904 St. Louis World's Fair",
+    "the history of soft-serve ice cream and continuous-flow freezers",
+    "ice cream in space and zero-gravity menu logistics for NASA astronauts",
+    "world records for the largest ice cream cake and tallest cone ever built",
+    "the medical and physiological science behind brain freeze",
+    "the history of ice cream truck jingle music and mechanical music boxes",
+    "the royal European roots of Neapolitan ice cream and spumoni",
+    "the ancient Japanese origins and modern popularity of mochi ice cream",
+    "hand-rolled ice cream street food traditions originating in Thailand",
+    "the cultural history of New Zealand's famous hokey pokey flavor",
+    "the ancient royal Mughal empire origins of Indian kulfi",
+    "traditional Alaskan indigenous Akutaq ice cream ingredients",
+    "the historic 1776 opening of America's first ice cream parlour in New York City",
+    "World War II ice cream barges built by the US Navy for troop morale",
+    "the intense manual hand-pollination process required for natural vanilla beans in Madagascar",
+    "the anonymous fan note origin story of chocolate chip cookie dough ice cream",
+    "the Great Depression invention of rocky road ice cream at San Francisco's Fentons Creamery",
+    "the linguistic origin of the term 'a la mode' applied to apple pie",
+    "Nancy Johnson's 1843 hand-cranked ice cream freezer patent breakthrough",
+    "the pharmacist invention of the ice cream soda and chocolate float",
+    "the history and preparation of deep-fried ice cream in Mexican-American restaurants",
+    "the science of overrun and how air is whipped into commercial ice cream",
+    "historic Victorian ice cream molds and elaborate dinner party sculpture trends",
+    "the chemistry of salt and ice mixtures used in antique hand-crank freezers",
+    "the cultural significance of ice cream socials in 19th-century American small towns"
 ]
 selected_category = random.choice(trivia_categories)
 
@@ -58,7 +99,6 @@ for model_name in text_models_to_try:
 if not ai_trivia_raw:
     raise Exception("All models failed to generate trivia content due to high demand.")
 
-# Clean up redundant prefixes case-insensitively
 cleaned_trivia = ai_trivia_raw
 prefixes_to_strip = [
     "ice cream trivia:", "did you know:", "trivia fact:", "fun fact:",
@@ -70,28 +110,72 @@ for p in prefixes_to_strip:
         cleaned_trivia = cleaned_trivia[len(p):].strip()
         break
 
-header_tag = "🍦 DAILY ICE CREAM TRIVIA 🐾"
+header_tag = "★ DAILY ICE CREAM TRIVIA ★"
 ai_trivia_formatted = make_bold(cleaned_trivia)
 
-# 2. Cartoon Background Generation Prompt featuring Petey & Andrew in a Lab Setting
+# 2. Expanded Cartoon Background Settings Pool (33+ Options)
 setting_choice = random.choice([
     "a high-tech futuristic ice cream testing laboratory with glowing holographic flavor charts and stainless steel tasting counters",
     "a cozy, sunlit wooden workshop filled with vintage ice cream churns, recipe notebooks, and colorful ingredient jars",
-    "a whimsical modern kitchen workspace with digital flavor analysis screens and bubbling test tubes of sweet syrups"
+    "a whimsical modern kitchen workspace with digital flavor analysis screens and bubbling test tubes of sweet syrups",
+    "a retro 1950s soda fountain counter with glittering chrome trim and glowing neon accent lights",
+    "an interstellar spaceship kitchen equipped with zero-gravity refrigeration units and floating dessert spheres",
+    "a magical candy-cane forest workshop with bubbling caramel cauldrons and sparkling sugar crystals",
+    "a cozy Victorian parlor lit by candlelight with velvet armchairs, Persian rugs, and ancient leather-bound recipe books",
+    "a high-altitude mountain observatory with snow-capped window views, brass telescopes, and antique barometers",
+    "a bustling medieval alchemy tower filled with glowing potions, bubbling glass flasks, and ice-crystal instruments",
+    "a tropical tiki-hut testing shack overlooking a sparkling blue lagoon with palm fronds and hanging fairy lights",
+    "a steampunk clockwork laboratory with whirring brass gears, ticking gauges, and steam-powered stainless steel churns",
+    "a cozy cabin kitchen during a gentle winter snowstorm with soft frost framing the windowpanes",
+    "an underwater marine biology station with curved glass domes showing colorful coral reefs and swimming sea turtles",
+    "a vibrant carnival midway tent surrounded by colorful bunting, festive paper lanterns, and blue ribbon awards",
+    "a sleek mid-century modern architectural studio with floor-to-ceiling glass windows and minimalist drafting tables",
+    "a subterranean crystal cavern glowing softly with bioluminescent blue quartz crystals and mineral stalactites",
+    "a retro drive-in diner kitchen with black-and-white checkered floors, stainless steel counters, and glowing jukeboxes",
+    "a whimsical treehouse laboratory built inside a giant hollowed-out baobab tree with rope bridges and hanging ferns",
+    "a futuristic lunar base observation dome overlooking the cratered grey moon surface and distant blue Earth",
+    "a classic Parisian patisserie kitchen lightly dusted with powdered sugar, copper pans, and fresh vanilla pods",
+    "a sun-drenched Mediterranean citrus orchard terrace with terracotta tiles, lemon trees, and striped canvas awnings",
+    "a high-speed bullet train dining car zooming smoothly through a scenic alpine mountain landscape",
+    "a cozy lighthouse keeper's room filled with nautical sea charts, brass instruments, and glowing storm lamps",
+    "a mystical wizard's tower study stacked with ancient spellbooks, glowing runes, and floating measuring spoons",
+    "a vintage 1920s jazz club backroom with deep velvet curtains, polished mahogany tables, and warm Edison bulbs",
+    "a bustling artisan marketplace stall in a sunlit Italian piazza surrounded by cobblestones and flowering vines",
+    "a high-tech environmental monitoring outpost nestled deep in an evergreen forest with wooden viewing decks",
+    "a whimsical cloud-castle kitchen floating high above a soft blanket of white cumulus clouds with rainbow light",
+    "a cozy country farmhouse kitchen featuring a heavy wood-burning stove and checkered tablecloths",
+    "a futuristic underwater dome city laboratory with neon-lit aquatic plants and marine research monitors",
+    "a magical toy workshop filled with mechanical wind-up gadgets, painted wooden shelves, and dollhouse displays",
+    "a classic Hollywood movie studio prop room stacked with vintage cameras, director chairs, and theatrical spotlights",
+    "a serene Japanese Zen garden tea house with smooth river rocks, raked gravel paths, and bonsai trees"
+])
+
+# 3. Expanded Dynamic Character Action & Outfit Pool (Replaces static chef hats)
+character_action_choice = random.choice([
+    "wearing smart-looking bowties and holding tiny clipboards while inspecting a floating hologram of a massive ice cream sundae",
+    "wearing miniature astronaut helmets and gazing excitedly at a glowing galaxy-swirl ice cream sphere on a pedestal",
+    "wearing stylish backward baseball caps and pointing animatedly at a massive digital flavor trend graph on a glass screen",
+    "wearing detective deerstalker hats and using miniature magnifying glasses to examine exotic vanilla bean pods on a stainless steel table",
+    "wearing colorful retro aprons and enthusiastically tasting a towering multi-scoop sundae creation with wide, joyful expressions",
+    "wearing tiny academic graduation caps and holding rolled-up parchment diplomas while reviewing a complex flavor matrix blueprint",
+    "wearing cozy knitted winter scarves and beanies while testing a rich, steaming hot-fudge ribbon distribution system",
+    "wearing futuristic tech vests and holding digital tablet styluses while tracking live consumer flavor analytics charts",
+    "wearing explorer sun hats and carrying miniature field binoculars while examining tropical mango and passionfruit puree samples",
+    "wearing sleek pilot goggles pushed up on their foreheads while managing a high-speed liquid nitrogen freezing console"
 ])
 
 image_prompt = (
     f"A high-end 3D animated digital art piece in the distinct visual style of Pixar and Disney, "
     f"featuring Andrew the golden retriever puppy and Petey, a loyal white-and-black pit bull mix with a distinct black patch over his left eye, "
     f"working together inside {setting_choice}. "
-    "They are wearing tiny tasting chef hats, examining ice cream samples with playful expressions. "
+    f"They are {character_action_choice}. "
     "Vibrant warm lighting, charming characters, polished cinematic digital rendering, perfect composition."
 )
 
 print(f"Generating cartoon background image with prompt: {image_prompt}")
 
 image_bytes = None
-image_models_to_try = ["gemini-2.5-flash", "gemini-3.1-flash-image", "gemini-3.1-flash-image-preview"]
+image_models_to_try = ["gemini-3.1-flash-image", "gemini-3.1-flash-image-preview"]
 
 for img_model in image_models_to_try:
     try:
@@ -117,7 +201,7 @@ if not image_bytes:
 
 image_path = "temp_trivia_image.png"
 
-# 3. Process Image & Render Pixel-Perfect Text Box Overlay
+# 4. Process Image & Render Pixel-Perfect Text Box Overlay
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
@@ -184,7 +268,7 @@ for line in wrapped_lines:
 img.save(image_path, "PNG")
 print("Trivia background image with clean text overlay successfully generated and saved!")
 
-# 4. Format Social Media Caption Text
+# 5. Format Social Media Caption Text
 post_header = make_bold("🍦 THE DAILY SCOOP WITH PETEY & ANDREW 🐾\n\n")
 engagement_cta = (
     "\n\n" + "🐕 " + make_bold("QUALITY CONTROL APPROVED!") + "\n" +
@@ -193,7 +277,7 @@ engagement_cta = (
 )
 post_text = post_header + ai_trivia_formatted + engagement_cta
 
-# 5. Exchange/Refresh Facebook Token
+# 6. Exchange/Refresh Facebook Token
 app_id = os.environ["FACEBOOK_APP_ID"]
 app_secret = os.environ["FACEBOOK_APP_SECRET"]
 current_token = os.environ["FACEBOOK_ACCESS_TOKEN"]
@@ -208,9 +292,9 @@ refresh_params = {
 refresh_res = requests.get(refresh_url, params=refresh_params).json()
 active_token = refresh_res.get("access_token", current_token)
 
-# 6. Post the Branded Photo + Caption to Facebook Page Feed
+# 7. Post the Branded Photo + Caption to Facebook Page Feed
 page_id = os.environ["FACEBOOK_PAGE_ID"]
-post_url = f"https://graph.facebook.0/v18.0/{page_id}/photos" if False else f"https://graph.facebook.com/v18.0/{page_id}/photos"
+post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
 
 with open(image_path, "rb") as img_file:
     files = {"source": img_file}
