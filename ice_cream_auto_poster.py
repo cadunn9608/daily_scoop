@@ -15,12 +15,29 @@ def make_bold(text):
 # Initialize the modern Gemini client
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-# --- 1. Fully Dynamic Topic Generation with Fallback Rotation ---
+# --- 1. Load History to Prevent Repeats ---
+history_file = "history.txt"
+past_trivia = []
+if os.path.exists(history_file):
+    with open(history_file, "r", encoding="utf-8") as f:
+        past_trivia = [line.strip() for line in f if line.strip()]
+
+# Keep the last 60 topics in the prompt context to prevent bloating
+recent_history = past_trivia[-60:] if past_trivia else []
+history_exclusion = ""
+if recent_history:
+    history_exclusion = (
+        " CRITICAL REQUIREMENT: Do not repeat, resemble, or touch upon any of these previously used trivia topics: "
+        + " | ".join(recent_history)
+    )
+
+# --- 2. Fully Dynamic Topic Generation with History Blacklist ---
 trivia_prompt = (
     "Generate a completely random, fascinating, and unique ice cream trivia fact (maximum 3 short sentences total). "
     "To ensure variety, choose an unexpected angle—it could be an obscure historical event, a bizarre ancient or modern flavor, "
     "a fascinating food science principle, a global cultural tradition, or a modern culinary trend from 1990 onward. "
-    "Do not mention any commercial brand names. "
+    "Do not mention any commercial brand names."
+    f"{history_exclusion} "
     "Output only the trivia content without any Markdown formatting or emojis."
 )
 
@@ -64,10 +81,15 @@ for p in prefixes_to_strip:
         cleaned_trivia = cleaned_trivia[len(p):].strip()
         break
 
+# Append the new unique trivia to history.txt
+with open(history_file, "a", encoding="utf-8") as f:
+    f.write(cleaned_trivia + "\n")
+print("Saved new trivia fact to history.txt")
+
 header_tag = "★ DAILY ICE CREAM TRIVIA ★"
 ai_trivia_formatted = make_bold(cleaned_trivia)
 
-# --- 2. Randomized Cartoon Background Settings Pool ---
+# --- 3. Randomized Cartoon Background Settings Pool ---
 setting_choice = random.choice([
     "a high-tech futuristic ice cream testing laboratory with glowing holographic flavor charts and stainless steel tasting counters",
     "a cozy, sunlit wooden workshop filled with vintage ice cream churns, recipe notebooks, and colorful ingredient jars",
@@ -104,7 +126,7 @@ setting_choice = random.choice([
     "a serene Japanese Zen garden tea house with smooth river rocks, raked gravel paths, and bonsai trees"
 ])
 
-# --- 3. Randomized Scientist, Engineer, and Master Chef Roles & Actions ---
+# --- 4. Randomized Scientist, Engineer, and Master Chef Roles & Actions ---
 character_action_choice = random.choice([
     "wearing crisp white chef coats and tall toques while carefully measuring gourmet vanilla bean extract and tasting fresh cream samples",
     "wearing engineer goggles and hard hats while inspecting the complex plumbing and stainless-steel pressure valves of a custom ice cream churning machine",
@@ -118,7 +140,7 @@ character_action_choice = random.choice([
     "wearing classic master chef uniforms while meticulously decorating a beautifully crafted multi-tiered ice cream creation"
 ])
 
-# --- 4. Locked Character Anchors (Matched precisely to the profile picture style) ---
+# --- 5. Locked Character Anchors (Matched precisely to the profile picture style) ---
 andrew_character = "Andrew, a fluffy golden retriever puppy with warm golden fur, floppy ears, and friendly dark eyes, exactly matching the style in the profile picture"
 petey_character = "Petey, an all-white puppy with clean white ears and a distinct black spot exclusively over his left eye, wearing a simple blue collar, exactly matching the style in the profile picture"
 
@@ -166,7 +188,7 @@ if not image_bytes:
 
 image_path = "temp_trivia_image.png"
 
-# --- 5. Process Image & Render Pixel-Perfect Text Box Overlay ---
+# --- 6. Process Image & Render Pixel-Perfect Text Box Overlay ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
@@ -233,7 +255,7 @@ for line in wrapped_lines:
 img.save(image_path, "PNG")
 print("Trivia background image with clean text overlay successfully generated and saved!")
 
-# --- 6. Format Social Media Caption Text ---
+# --- 7. Format Social Media Caption Text ---
 post_header = make_bold("🍦 THE DAILY SCOOP WITH PETEY & ANDREW 🐾\n\n")
 engagement_cta = (
     "\n\n" + "🐕 " + make_bold("QUALITY CONTROL APPROVED!") + "\n" +
@@ -242,7 +264,7 @@ engagement_cta = (
 )
 post_text = post_header + ai_trivia_formatted + engagement_cta
 
-# --- 7. Exchange/Refresh Facebook Token ---
+# --- 8. Exchange/Refresh Facebook Token ---
 app_id = os.environ["FACEBOOK_APP_ID"]
 app_secret = os.environ["FACEBOOK_APP_SECRET"]
 current_token = os.environ["FACEBOOK_ACCESS_TOKEN"]
@@ -264,7 +286,7 @@ except Exception as e:
     print(f"Failed to refresh token: {e}. Using existing token.")
     active_token = current_token
 
-# --- 8. Post the Branded Photo + Caption to Facebook Page Feed ---
+# --- 9. Post the Branded Photo + Caption to Facebook Page Feed ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
 post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
 
