@@ -150,18 +150,18 @@ setting_choice = random.choice([
     "a serene Japanese Zen garden tea house with smooth river rocks, raked gravel paths, and bonsai trees"
 ])
 
-# 3. Expanded Dynamic Character Action & Outfit Pool (Replaces static chef hats)
+# 3. Updated Scientist, Engineer, and Master Chef Roles & Actions
 character_action_choice = random.choice([
-    "wearing smart-looking bowties and holding tiny clipboards while inspecting a floating hologram of a massive ice cream sundae",
-    "wearing miniature astronaut helmets and gazing excitedly at a glowing galaxy-swirl ice cream sphere on a pedestal",
-    "wearing stylish backward baseball caps and pointing animatedly at a massive digital flavor trend graph on a glass screen",
-    "wearing detective deerstalker hats and using miniature magnifying glasses to examine exotic vanilla bean pods on a stainless steel table",
-    "wearing colorful retro aprons and enthusiastically tasting a towering multi-scoop sundae creation with wide, joyful expressions",
-    "wearing tiny academic graduation caps and holding rolled-up parchment diplomas while reviewing a complex flavor matrix blueprint",
-    "wearing cozy knitted winter scarves and beanies while testing a rich, steaming hot-fudge ribbon distribution system",
-    "wearing futuristic tech vests and holding digital tablet styluses while tracking live consumer flavor analytics charts",
-    "wearing explorer sun hats and carrying miniature field binoculars while examining tropical mango and passionfruit puree samples",
-    "wearing sleek pilot goggles pushed up on their foreheads while managing a high-speed liquid nitrogen freezing console"
+    "wearing crisp white chef coats and tall toques while carefully measuring gourmet vanilla bean extract and tasting fresh cream samples",
+    "wearing engineer goggles and hard hats while inspecting the complex plumbing and stainless-steel pressure valves of a custom ice cream churning machine",
+    "wearing professional scientist lab coats and safety glasses while examining glowing chemical formulas and color-coded flavor charts on a futuristic digital display",
+    "wearing professional chef aprons and holding wooden tasting spoons while testing the viscosity of rich chocolate fudge and caramel ribbons",
+    "wearing engineer toolbelts and pocket protectors while tuning the precision temperature gauges of a cryogenic flash-freezing unit",
+    "wearing white scientist lab coats and blue latex gloves while peering into microscopes to check fat crystal structures in a smooth dairy blend",
+    "wearing classic master chef jackets and neckerchiefs while proudly rating the sweetness balance of various artisanal fruit purees",
+    "wearing engineer headsets and high-tech utility belts while calibrating automated syrup dispensers on a stainless-steel production line",
+    "wearing scientific safety goggles and lab coats while carefully mixing bubbling liquid nitrogen with sweet cream bases",
+    "wearing classic master chef uniforms while meticulously decorating a beautifully crafted multi-tiered ice cream creation"
 ])
 
 image_prompt = (
