@@ -1,6 +1,7 @@
 import os
 import time
 import random
+import subprocess
 import requests
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
@@ -8,7 +9,7 @@ from google import genai
 
 def make_bold(text):
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜J𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
+    bold = "𝗔𝗕𝗖𝗗𝗘𝗙G𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
     return text.translate(str.maketrans(normal, bold))
 
 def get_valid_facebook_token():
@@ -30,8 +31,12 @@ def get_valid_facebook_token():
             "fb_exchange_token": initial_token
         }
         res = requests.get(exchange_url, params=params).json()
-        long_lived_user_token = res.get("access_token")
         
+        if "error" in res:
+            print(f"Warning: Token exchange failed: {res['error'].get('message')}")
+            return initial_token
+            
+        long_lived_user_token = res.get("access_token")
         if not long_lived_user_token:
             return initial_token
 
@@ -44,7 +49,8 @@ def get_valid_facebook_token():
                 return page.get("access_token")
 
         return long_lived_user_token
-    except Exception:
+    except Exception as e:
+        print(f"Warning: Exception during token refresh: {e}")
         return initial_token
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
@@ -295,34 +301,4 @@ for line in wrapped_lines:
     draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
     text_y += line_height
 
-img.save(image_path, "PNG")
-
-# --- 7. Format Social Media Caption Text ---
-post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
-engagement_cta = (
-    "\n\n" + "🐕 " + make_bold("LAB TESTED & APPROVED!") + "\n" +
-    "Andrew and Petey checked the data logs on this one. What's your top flavor? Drop it below! 👇"
-)
-post_text = post_header + ai_trivia_formatted + engagement_cta
-
-# --- 8. Post to Facebook Reels Feed ---
-page_id = os.environ["FACEBOOK_PAGE_ID"]
-active_token = get_valid_facebook_token()
-post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
-
-with open(image_path, "rb") as img_file:
-    files = {"source": img_file}
-    payload = {
-        "caption": post_text,
-        "published": "true",
-        "access_token": active_token
-    }
-    try:
-        res = requests.post(post_url, data=payload, files=files)
-        res_data = res.json()
-        if "id" in res_data:
-            print(f"Successfully posted Reel image to Facebook! Post ID: {res_data['id']}")
-        else:
-            print(f"Failed to post to Facebook: {res_data}")
-    except Exception as e:
-        print(f"Exception occurred while posting to Facebook: {e}")
+img
