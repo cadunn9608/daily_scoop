@@ -79,7 +79,6 @@ text_models_to_try = [
     "gemini-flash-latest"
 ]
 
-# Comprehensive domain stop words to ignore during similarity checks
 domain_stopwords = {
     "cream", "answer", "history", "ice", "scoop", "scoops", "trivia", 
     "question", "fact", "during", "famous", "created", "invented", 
@@ -114,12 +113,10 @@ for attempt in range(3):
         candidate_lower = candidate_text.lower()
         is_too_similar = False
         for past in recent_history:
-            # Strip all punctuation cleanly and remove domain stopwords
             past_words = set(w.strip('.,!?:;"()') for w in past.lower().split() if len(w) > 4) - domain_stopwords
             candidate_words = set(w.strip('.,!?:;"()') for w in candidate_lower.split() if len(w) > 4) - domain_stopwords
             common_words = past_words.intersection(candidate_words)
             
-            # Require at least 6 unique overlapping substantive words before flagging as a duplicate
             if len(common_words) >= 6:
                 is_too_similar = True
                 print(f"Rejected Reel candidate due to keyword overlap: {common_words}")
@@ -237,7 +234,7 @@ if not image_bytes:
 
 image_path = "temp_reel_image.png"
 
-# --- 6. Process Image & Render Text Box Overlay ---
+# --- 6. Process Image & Render Text Box Overlay (Positioned at the TOP) ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
@@ -274,8 +271,9 @@ header_height = 32
 padding = 20
 total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding * 2)
 
-box_y1 = img_height - 30
-box_y0 = box_y1 - total_box_height
+# Position text box at the TOP of the image so it doesn't block characters/table
+box_y0 = 40
+box_y1 = box_y0 + total_box_height
 
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
 draw_overlay = ImageDraw.Draw(overlay)
@@ -301,4 +299,54 @@ for line in wrapped_lines:
     draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
     text_y += line_height
 
-img
+img.save(image_path, "PNG")
+
+# --- 7. Convert Image to MP4 Video with FFmpeg for Reels ---
+video_path = "temp_reel_video.mp4"
+print("Converting image to 6-second MP4 video with FFmpeg...")
+
+ffmpeg_cmd = [
+    "ffmpeg", "-y",
+    "-loop", "1",
+    "-i", image_path,
+    "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+    "-c:v", "libx264",
+    "-t", "6",
+    "-pix_fmt", "yuv420p",
+    "-c:a", "aac",
+    "-shortest",
+    video_path
+]
+
+subprocess.run(ffmpeg_cmd, check=True)
+print("Video reel file created successfully.")
+
+# --- 8. Format Social Media Caption Text ---
+post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
+engagement_cta = (
+    "\n\n" + "🐕 " + make_bold("LAB TESTED & APPROVED!") + "\n" +
+    "Andrew and Petey checked the data logs on this one. What's your top flavor? Drop it below! 👇"
+)
+post_text = post_header + ai_trivia_formatted + engagement_cta
+
+# --- 9. Post Video to Facebook Reels Endpoint ---
+page_id = os.environ["FACEBOOK_PAGE_ID"]
+active_token = get_valid_facebook_token()
+post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
+
+with open(video_path, "rb") as vid_file:
+    files = {"source": vid_file}
+    payload = {
+        "description": post_text,
+        "media_type": "REELS",
+        "access_token": active_token
+    }
+    try:
+        res = requests.post(post_url, data=payload, files=files)
+        res_data = res.json()
+        if "id" in res_data:
+            print(f"Successfully posted Reel video to Facebook! Post ID: {res_data['id']}")
+        else:
+            print(f"Failed to post Reel to Facebook: {res_data}")
+    except Exception as e:
+        print(f"Exception occurred while posting Reel to Facebook: {e}")
