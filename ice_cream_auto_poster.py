@@ -15,7 +15,7 @@ def make_bold(text):
 # Initialize the modern Gemini client
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-# --- 1. Fully Dynamic Topic Generation ---
+# --- 1. Fully Dynamic Topic Generation with Fallback Rotation ---
 trivia_prompt = (
     "Generate a completely random, fascinating, and unique ice cream trivia fact (maximum 3 short sentences total). "
     "To ensure variety, choose an unexpected angle—it could be an obscure historical event, a bizarre ancient or modern flavor, "
@@ -26,9 +26,12 @@ trivia_prompt = (
 
 ai_trivia_raw = None
 text_models_to_try = [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
     "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash"
+    "gemini-flash-latest"
 ]
 
 for model_name in text_models_to_try:
@@ -44,7 +47,7 @@ for model_name in text_models_to_try:
             break
     except Exception as e:
         print(f"Model {model_name} failed with error: {e}. Trying next...")
-        time.sleep(3)
+        time.sleep(2)
 
 if not ai_trivia_raw:
     raise Exception("All text models failed to generate trivia content.")
@@ -130,9 +133,15 @@ image_prompt = (
 print(f"Generating cartoon background image with prompt: {image_prompt}")
 
 image_bytes = None
-image_models_to_try = ["gemini-3.1-flash-image", "gemini-3.1-flash-image-preview"]
+image_models_to_try = [
+    "gemini-3.1-flash-image",
+    "gemini-3.1-flash-image-preview",
+    "gemini-3-pro-image",
+    "gemini-2.5-flash-image"
+]
 
 for img_model in image_models_to_try:
+    print(f"Attempting image generation using model: {img_model}")
     try:
         response = client.models.generate_content(
             model=img_model,
@@ -150,6 +159,7 @@ for img_model in image_models_to_try:
             break
     except Exception as e:
         print(f"Image model {img_model} failed: {e}. Trying next...")
+        time.sleep(2)
 
 if not image_bytes:
     raise Exception("All Gemini image generation models failed to return image data.")
