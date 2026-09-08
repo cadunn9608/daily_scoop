@@ -18,11 +18,11 @@ if not all([FB_ACCESS_TOKEN, FB_PAGE_ID, GEMINI_API_KEY]):
 # Initialize Gemini Client
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-# Define Model Fallback Hierarchy
+# Define Current Model Fallback Hierarchy
 GEMINI_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-1.5-flash",
-    "gemini-2.5-pro"
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.1-pro-preview"
 ]
 
 def generate_with_fallback(prompt: str) -> str:
@@ -59,7 +59,8 @@ def run_in_memory_lstm_forecast() -> float:
     y = np.array(y)
     
     model = tf.keras.Sequential([
-        tf.keras.layers.LSTM(32, input_shape=(window_size, 1)),
+        tf.keras.layers.Input(shape=(window_size, 1)),
+        tf.keras.layers.LSTM(32),
         tf.keras.layers.Dense(1)
     ])
     model.compile(optimizer='adam', loss='mse')
