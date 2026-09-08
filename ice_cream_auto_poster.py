@@ -114,9 +114,9 @@ character_action_choice = random.choice([
     "wearing classic master chef uniforms while meticulously decorating a beautifully crafted multi-tiered ice cream creation"
 ])
 
-# 4. Locked Character Anchors (Guarantees 100% consistent appearance across every post)
+# 4. Locked Character Anchors (Updated with Petey as an American Bulldog puppy, all white with a black spot on his left eye)
 andrew_character = "Andrew, an adorable golden retriever puppy with fluffy golden fur and a happy expression"
-petey_character = "Petey, a stocky white-and-black pit bull mix with a distinct large black patch covering his left eye and ear"
+petey_character = "Petey, an adorable American Bulldog puppy who is all white with a distinct black spot over his left eye"
 
 image_prompt = (
     f"A high-end 3D animated digital art piece in the distinct visual style of Pixar and Disney, "
@@ -223,7 +223,7 @@ img.save(image_path, "PNG")
 print("Trivia background image with clean text overlay successfully generated and saved!")
 
 # 6. Format Social Media Caption Text
-post_header = make_bold("🍦 THE DAILY SCOOP WITH PETEY & ANDREW 🐾\n\n")
+post_header = make_bold("🍦 JUST THE DAILY SCOOP WITH PETEY & ANDREW 🐾\n\n")
 engagement_cta = (
     "\n\n" + "🐕 " + make_bold("QUALITY CONTROL APPROVED!") + "\n" +
     "Andrew and Petey reviewed today's data from the lab and gave it two paws up. " +
