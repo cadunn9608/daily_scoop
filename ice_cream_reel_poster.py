@@ -9,7 +9,7 @@ from google import genai
 
 def make_bold(text):
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
+    bold = "𝗔𝗕𝗖𝗗𝗘𝗙G𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
     return text.translate(str.maketrans(normal, bold))
 
 def get_valid_facebook_token():
@@ -83,7 +83,7 @@ for attempt in range(3):
         f"Attempt {attempt+1}: Act as an expert trivia host and culinary historian. "
         "Generate 1 captivating, unique ice cream trivia fact from the year 1900 through the early 1900s. "
         "Format your response into 3 distinct lines using safe text symbols (like ★ or ►) instead of emojis: "
-        "Line 1: A catchy hook/intro with a symbol (e.g., [★] ICE CREAM HISTORY TIME!). "
+        "Line 1: A catchy hook/intro with a symbol (e.g., [★] COOL COLD HISTORY!). "
         "Line 2: The trivia question or setup (e.g., What iconic 1920 sweet treat was born from a boy's indecision?). "
         "Line 3: The exciting answer and brief explanation with a symbol (e.g., [►] ANSWER: The Eskimo Pie, invented by an Iowa teacher!). "
         "Keep the total word count under 50 words so it fits comfortably in a mobile video overlay box. "
@@ -192,7 +192,7 @@ for img_model in image_models_to_try:
 if not image_bytes:
     raise Exception("All image models failed for Reel background generation.")
 
-# --- 3. Process Image and Overlay High-Positioned Text Box with Drop Shadow ---
+# --- 3. Process Image and Overlay Top-Positioned Text Box with Drop Shadow ---
 image_path_png = "temp_reel_image.png"
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
@@ -211,7 +211,6 @@ box_x0 = 60
 box_x1 = img_width - 60
 max_text_width = (box_x1 - box_x0) - 50
 
-# Word wrap all lines cleanly, adding extra vertical separation between paragraphs
 wrapped_lines = []
 for paragraph in cleaned_trivia.split("\n"):
     if not paragraph.strip():
@@ -228,17 +227,16 @@ for paragraph in cleaned_trivia.split("\n"):
             current_line = word
     if current_line:
         wrapped_lines.append(current_line)
-    wrapped_lines.append("") # blank spacer between paragraphs
+    wrapped_lines.append("")
 
-# Remove trailing empty spacer if any
 if wrapped_lines and wrapped_lines[-1] == "":
     wrapped_lines.pop()
 
 padding = 28
 total_box_height = (len(wrapped_lines) * line_height) + (padding * 2)
 
-# Position high up near Y = 280
-box_y0 = 280
+# Position high up near the TOP (Y = 160) so characters and details below remain fully visible
+box_y0 = 160
 box_y1 = box_y0 + total_box_height
 
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -262,27 +260,59 @@ for i, line in enumerate(wrapped_lines):
         text_y += line_height // 2
         continue
     
-    # Header line in bright gold, body lines in crisp white with a dark shadow offset for readability
     if i == 0:
-        draw.text((text_x + 2, text_y + 2), line, fill=(0, 0, 0, 180), font=header_font) # Shadow
+        draw.text((text_x + 2, text_y + 2), line, fill=(0, 0, 0, 180), font=header_font)
         draw.text((text_x, text_y), line, fill=(252, 211, 77, 255), font=header_font)
     else:
-        draw.text((text_x + 2, text_y + 2), line, fill=(0, 0, 0, 180), font=font) # Shadow
+        draw.text((text_x + 2, text_y + 2), line, fill=(0, 0, 0, 180), font=font)
         draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
         
     text_y += line_height
 
 img.save(image_path_png, "PNG")
 
-# --- 4. Convert PNG to MP4 Video via FFmpeg ---
-video_path_mp4 = "temp_reel_video.mp4"
-ffmpeg_cmd = [
-    "ffmpeg", "-loop", "1", "-i", image_path_png,
-    "-c:v", "libx264", "-t", "6", "-pix_fmt", "yuv420p",
-    "-vf", "scale=1080:1920", "-y", video_path_mp4
+# --- 4. Fetch Random Upbeat Public Domain Music & Render MP4 Video via FFmpeg ---
+audio_path = "temp_music.mp3"
+ragtime_audio_pool = [
+    "https://upload.wikimedia.org/wikipedia/commons/d/d4/Scott_Joplin_-_Maple_Leaf_Rag_%28piano_roll%29.ogg",
+    "https://upload.wikimedia.org/wikipedia/commons/c/c8/Scott_Joplin_-_The_Entertainer_%28piano_roll%29.ogg",
+    "https://upload.wikimedia.org/wikipedia/commons/e/e3/Scott_Joplin_-_Elite_Syncopations_%28piano_roll%29.ogg"
 ]
+
+selected_audio_url = random.choice(ragtime_audio_pool)
+audio_downloaded = False
+
+try:
+    audio_res = requests.get(selected_audio_url, timeout=10)
+    if audio_res.status_code == 200:
+        with open(audio_path, "wb") as f:
+            f.write(audio_res.content)
+        audio_downloaded = True
+        print("Successfully downloaded random upbeat ragtime music track!")
+except Exception as e:
+    print(f"Warning: Could not download background music ({e}), falling back to silence.")
+
+video_path_mp4 = "temp_reel_video.mp4"
+
+if audio_downloaded:
+    ffmpeg_cmd = [
+        "ffmpeg", "-loop", "1", "-i", image_path_png,
+        "-i", audio_path,
+        "-c:v", "libx264", "-t", "6", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "128k",
+        "-shortest", "-y", video_path_mp4
+    ]
+else:
+    ffmpeg_cmd = [
+        "ffmpeg", "-loop", "1", "-i", image_path_png,
+        "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+        "-c:v", "libx264", "-t", "6", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "128k",
+        "-shortest", "-y", video_path_mp4
+    ]
+
 subprocess.run(ffmpeg_cmd, check=True)
-print("Reel video rendered successfully!")
+print("Reel video and background music rendered successfully!")
 
 # --- 5. Publish to Facebook Reels API with Correct Binary Upload ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
@@ -312,7 +342,6 @@ with open(video_path_mp4, "rb") as video_file:
 if "error" in upload_res:
     raise Exception(f"Facebook binary video file upload failed: {upload_res}")
 
-# Full emojis are included here in the caption where Facebook renders them natively!
 caption = "🍦 " + make_bold("DAILY ICE CREAM REEL") + "\n\n" + make_bold(cleaned_trivia) + "\n\n🐾 Andrew & Petey's Sweet Scoop! What's your top flavor? 👇 #IceCream #Reels #Trivia"
 finish_url = f"https://graph.facebook.com/v18.0/{page_id}/video_reels"
 finish_params = {
