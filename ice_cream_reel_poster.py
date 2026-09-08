@@ -82,12 +82,13 @@ for attempt in range(3):
     trivia_prompt = (
         f"Attempt {attempt+1}: Act as an expert trivia host and culinary historian. "
         "Generate 1 captivating, unique ice cream trivia fact from the year 1900 through the early 1900s. "
-        "Draw from a mix of categories: Celebrities & Famous Figures (e.g., favorite brands or anecdotes), "
-        "Brand Origin Stories (e.g., unexpected roadblocks or naming inspirations), or Inventions & Firsts (e.g., iconic novelties or serving methods of the era). "
-        "CRITICAL FIT REQUIREMENT: Keep the entire text concise (UNDER 30 WORDS / maximum 2 short sentences) so it fits inside a mobile video overlay box. "
-        "Do not include boring or purely numerical statistic questions. "
+        "Format your response into 3 distinct lines with emojis: "
+        "Line 1: A catchy hook/intro with an emoji (e.g., 🍦 ICE CREAM HISTORY TIME!). "
+        "Line 2: The trivia question or setup (e.g., What iconic 1920 sweet treat was born from a boy's indecision?). "
+        "Line 3: The exciting answer and brief explanation with an emoji (e.g., ✨ Answer: The Eskimo Pie, invented by an Iowa teacher!). "
+        "Keep the total word count under 50 words so it fits comfortably in a mobile video overlay box. "
         f"{history_exclusion} "
-        "Output only the trivia content without any Markdown formatting or emojis."
+        "Output only the 3 text lines with emojis, without Markdown bolding asterisks."
     )
 
     candidate_text = None
@@ -123,23 +124,47 @@ if not ai_trivia_raw:
     raise Exception("All text models failed to generate unique reel trivia content.")
 
 cleaned_trivia = ai_trivia_raw
-prefixes_to_strip = ["ice cream trivia:", "did you know:", "trivia fact:", "fun fact:", "fact:"]
-for p in prefixes_to_strip:
-    if cleaned_trivia.lower().startswith(p):
-        cleaned_trivia = cleaned_trivia[len(p):].strip()
-        break
 
 with open(history_file, "a", encoding="utf-8") as f:
-    f.write(cleaned_trivia + "\n")
+    f.write(cleaned_trivia.replace("\n", " ") + "\n")
 print("Saved new unique reel trivia fact to reel_history.txt")
 
-# --- 2. Generate Vertical 9:16 Background Image with Working Models ---
-image_prompt = (
-    "A stunning 9:16 vertical aspect ratio 3D animated digital art piece in the style of Pixar and Disney, "
-    "featuring Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, "
-    "running a vibrant, magical gourmet ice cream shoppe filled with glowing neon lights and swirling soft-serve machines. "
-    "Vibrant colors, cinematic vertical composition, ultra-detailed."
-)
+# --- 2. Generate Vertical 9:16 Background Image with 30 Randomized Settings ---
+image_prompts_pool = [
+    "A stunning 9:16 vertical 3D Pixar-style digital art piece featuring Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, running a turn-of-the-century horse-drawn ice cream wagon on a bustling 1900 cobblestone New York street. Vibrant colors, cinematic vertical composition.",
+    "A whimsical 9:16 vertical 3D Disney-style digital art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, operating a gleaming Victorian ice cream parlor with stained glass windows and polished brass fixtures. Warm cinematic lighting, ultra-detailed.",
+    "A magical 9:16 vertical 3D Pixar-style art piece showing Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving towering waffle cones at a glowing 1900s world's fair ice cream pavilion under striped canvas tents. Vibrant and detailed.",
+    "A charming 9:16 vertical 3D Disney-style digital art piece with Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, mixing colorful ice cream sodas behind a mahogany counter in a cozy 1905 apothecary soda fountain. Warm vintage colors.",
+    "An enchanted 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving steaming hot fudge sundaes inside a cozy winter chalet in 1910 by a glowing stone fireplace. Cinematic lighting.",
+    "A bright 9:16 vertical 3D Disney-style digital art piece showing Andrew, a fluffy golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing sailor caps at a 1920s seaside boardwalk ice cream stand as colorful waves crash behind them. Vibrant summer colors.",
+    "A whimsical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, operating a steampunk ice cream factory filled with copper pipes and swirling vanilla soft-serve while wearing tiny goggles. Ultra-detailed.",
+    "A classic 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, standing by a 1900 soda shop counter decorated with vintage glass sprinkle jars and bowties. Warm nostalgic lighting.",
+    "A magical 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a night-time carnival ice cream cart lit by thousands of glowing fairy lights, handing out treats. Vibrant colors.",
+    "A charming 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving homemade churned ice cream in wooden bowls on a rustic old-fashioned country store porch in 1902. Detailed textures.",
+    "A grand 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, presenting an elaborate multi-tiered ice cream cake in a majestic 1910 grand hotel dessert salon. Cinematic lighting.",
+    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing tiny diving helmets inside an underwater coral-reef ice cream parlor scooping pastel treats. Vibrant aquatic colors.",
+    "A glowing 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside an enchanted forest treehouse ice cream shoppe surrounded by sparkling mint-chip swirls and fireflies. Magical lighting.",
+    "A bustling 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at a 1908 railway station ice cream kiosk waving to passengers holding melting cones. Warm vintage afternoon sun.",
+    "A vintage 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, managing a 1920s jazz-age rooftop ice cream lounge under starlit skies and glowing string lights. Cinematic mood.",
+    "A magical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, floating on fluffy pink clouds holding golden spoons inside a cloud-kingdom spun-sugar ice cream factory. Soft pastel tones.",
+    "A charming 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving artisanal gelato from a wooden cart in a European cobblestone piazza cafe in 1904. Warm sunny lighting.",
+    "A cozy 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside an antique-filled inventors workshop testing a brand-new mechanical ice cream churning apparatus. Detailed workshop environment.",
+    "A vibrant 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, serving spiced apple-cinnamon ice cream from wooden crates in an autumn harvest orchard in 1906. Warm golden hour light.",
+    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, inside a moonlit desert oasis ice cream tent glowing with lanterns, serving cooling treats. Magical starry backdrop.",
+    "A classic 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, on a 1912 grand ocean liner ship deck ice cream parlor looking out over blue open ocean waves. Cinematic lighting.",
+    "A magical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing winter scarves and serving peppermint swirl cones inside a candy-cane forest ice cream cottage. Bright festive colors.",
+    "A bustling 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, at an early-morning 1903 farmers market ice cream stand surrounded by fresh berries and cream. Vibrant morning light.",
+    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, running a vintage clockwork-themed ice cream parlor with giant ticking gears and golden counters. Detailed retro-futurism.",
+    "A glowing 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, mixing neon-glowing blueberry scoops inside a bioluminescent magical grotto ice cream cave. Magical glowing colors.",
+    "A charming 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, running a 1915 suburban front porch lemonade and ice cream stand while wearing striped vests. Warm sunny afternoon.",
+    "A majestic 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing royal chef hats and dusting cocoa powder in a castle banquet hall ice cream kitchen in 1900. Rich dramatic lighting.",
+    "A whimsical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, balancing tall milkshakes at an early-era retro drive-in soda fountain counter. Bright cheerful lighting.",
+    "A sunlit 9:16 vertical 3D Pixar-style art piece featuring Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, wearing colorful flower leis under palm fronds at a tropical beach tiki ice cream hut in 1907. Vibrant tropical colors.",
+    "A magical 9:16 vertical 3D Disney-style art piece showing Andrew, a golden retriever puppy, and Petey, an all-white puppy with a black eye patch, steering a floating airship ice cream balloon drifting gracefully over green hills while scooping gelato. Cinematic vista."
+]
+
+image_prompt = random.choice(image_prompts_pool)
+print("Selected random background prompt theme for this run.")
 
 image_bytes = None
 image_models_to_try = [
@@ -167,38 +192,27 @@ for img_model in image_models_to_try:
 if not image_bytes:
     raise Exception("All image models failed for Reel background generation.")
 
-# --- 3. Process Image and Overlay Clean Safe-Zone Text Box ---
+# --- 3. Process Image and Overlay Larger, Higher-Positioned Text Box ---
 image_path_png = "temp_reel_image.png"
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
-# Determine font size dynamically based on length to guarantee it fits safely
-text_length = len(cleaned_trivia)
-if text_length > 180:
-    body_font_size = 20
-    header_font_size = 24
-    line_height = 28
-elif text_length > 120:
-    body_font_size = 22
-    header_font_size = 26
-    line_height = 30
-else:
-    body_font_size = 24
-    header_font_size = 28
-    line_height = 34
+# Larger, highly legible font sizes
+body_font_size = 26
+line_height = 36
 
 try:
     font = ImageFont.truetype("DejaVuSans.ttf", body_font_size)
-    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", header_font_size)
+    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 30)
 except IOError:
     font = ImageFont.load_default()
     header_font = font
 
-# Horizontal margins keep text away from video edges
-box_x0 = 70
-box_x1 = img_width - 70
+box_x0 = 60
+box_x1 = img_width - 60
 max_text_width = (box_x1 - box_x0) - 50
 
+# Word wrap all lines cleanly
 wrapped_lines = []
 for paragraph in cleaned_trivia.split("\n"):
     if not paragraph.strip():
@@ -216,27 +230,22 @@ for paragraph in cleaned_trivia.split("\n"):
     if current_line:
         wrapped_lines.append(current_line)
 
-header_height = 40
-padding = 24
-total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding * 2)
+padding = 28
+total_box_height = (len(wrapped_lines) * line_height) + (padding * 2)
 
-# Position the bottom of the box above the Reel UI caption safe zone (320px from bottom)
-box_y1 = img_height - 320
-box_y0 = box_y1 - total_box_height
+# Position the text box much higher up (starting near Y = 300) so it's clear of characters and captions
+box_y0 = 300
+box_y1 = box_y0 + total_box_height
 
-# Make sure box top does not invade top navigation UI safe area (minimum top margin 220px)
-if box_y0 < 220:
-    box_y0 = 220
-    box_y1 = box_y0 + total_box_height
-
+# Draw gorgeous frosted glass overlay with a vibrant gold border
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
 draw_overlay = ImageDraw.Draw(overlay)
 draw_overlay.rounded_rectangle(
     [box_x0, box_y0, box_x1, box_y1],
-    radius=20,
-    fill=(15, 23, 42, 235),
-    outline=(245, 158, 11, 255),
-    width=4
+    radius=24,
+    fill=(15, 23, 42, 240),      # Rich dark navy background
+    outline=(245, 158, 11, 255),  # Warm amber/gold border
+    width=5
 )
 
 img = Image.alpha_composite(img, overlay).convert("RGB")
@@ -245,11 +254,12 @@ draw = ImageDraw.Draw(img)
 text_x = box_x0 + 25
 text_y = box_y0 + padding
 
-draw.text((text_x, text_y), "★ ICE CREAM REEL TRIVIA ★", fill=(252, 211, 77, 255), font=header_font)
-text_y += header_height
-
-for line in wrapped_lines:
-    draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
+for i, line in enumerate(wrapped_lines):
+    # Make the first line (intro) stand out in bright gold
+    if i == 0:
+        draw.text((text_x, text_y), line, fill=(252, 211, 77, 255), font=header_font)
+    else:
+        draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
     text_y += line_height
 
 img.save(image_path_png, "PNG")
@@ -268,7 +278,6 @@ print("Reel video rendered successfully!")
 page_id = os.environ["FACEBOOK_PAGE_ID"]
 access_token = get_valid_facebook_token()
 
-# Step 1: Initialize upload
 start_url = f"https://graph.facebook.com/v18.0/{page_id}/video_reels?upload_phase=start&access_token={access_token}"
 start_res = requests.post(start_url).json()
 
@@ -281,7 +290,6 @@ upload_url = start_res.get("upload_url")
 if not video_id or not upload_url:
     raise Exception(f"Facebook Reels API returned missing video_id or upload_url: {start_res}")
 
-# Step 2: Upload binary video stream with correct headers
 file_size = os.path.getsize(video_path_mp4)
 headers = {
     "Authorization": f"OAuth {access_token}",
@@ -294,7 +302,6 @@ with open(video_path_mp4, "rb") as video_file:
 if "error" in upload_res:
     raise Exception(f"Facebook binary video file upload failed: {upload_res}")
 
-# Step 3: Finish and Publish
 caption = "🍦 " + make_bold("DAILY ICE CREAM REEL") + "\n\n" + make_bold(cleaned_trivia) + "\n\n🐾 Andrew & Petey's Sweet Scoop! What's your top flavor? 👇 #IceCream #Reels #Trivia"
 finish_url = f"https://graph.facebook.com/v18.0/{page_id}/video_reels"
 finish_params = {
