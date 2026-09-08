@@ -144,14 +144,21 @@ setting_choice = random.choice([
     "a high-tech futuristic ice cream testing laboratory with glowing holographic flavor charts",
     "a retro 1950s soda fountain counter with glittering chrome trim and glowing neon accent lights",
     "a steampunk clockwork laboratory with whirring brass gears, ticking gauges, and steam-powered stainless steel churns",
-    "a classic Parisian patisserie kitchen lightly dusted with powdered sugar, copper pans, and fresh vanilla pods"
+    "a classic Parisian patisserie kitchen lightly dusted with powdered sugar, copper pans, and fresh vanilla pods",
+    "a cozy, sunlit wooden workshop filled with vintage ice cream churns, recipe notebooks, and colorful ingredient jars",
+    "a magical candy-cane forest workshop with bubbling caramel cauldrons and sparkling sugar crystals",
+    "an underwater marine biology station with curved glass domes showing colorful coral reefs and swimming sea turtles"
 ])
 
+# --- 4. Randomized Scientist, Engineer, and Master Chef Roles & Actions ---
 character_action_choice = random.choice([
     "wearing crisp white chef coats and tall toques while carefully measuring gourmet vanilla bean extract",
-    "wearing engineer goggles and hard hats while inspecting the complex plumbing of a custom ice cream churning machine"
+    "wearing engineer goggles and hard hats while inspecting the complex plumbing of a custom ice cream churning machine",
+    "wearing professional scientist lab coats and safety glasses while examining glowing chemical formulas",
+    "wearing professional chef aprons and holding wooden tasting spoons while testing the viscosity of rich chocolate fudge"
 ])
 
+# --- 5. Locked Character Anchors ---
 andrew_character = "Andrew, a fluffy golden retriever puppy with warm golden fur, floppy ears, and friendly dark eyes"
 petey_character = "Petey, an all-white puppy with clean white ears and a distinct black spot exclusively over his left eye, wearing a simple blue collar"
 
@@ -246,9 +253,9 @@ for paragraph in body_text_paragraphs:
         test_line = f"{current_line} {word}".strip()
         if font.getlength(test_line) <= max_text_width:
             current_line = test_line
-    else:
-        if current_line: wrapped_body_lines.append(current_line)
-        current_line = word
+        else:
+            if current_line: wrapped_body_lines.append(current_line)
+            current_line = word
     if current_line: wrapped_body_lines.append(current_line)
 
 header_line_height = 52
@@ -299,32 +306,55 @@ video_path = "temp_reel_video.mp4"
 if not os.path.exists(audio_path):
     print("Downloading royalty-free background music...")
     music_url = "https://upload.wikimedia.org/wikipedia/commons/d/d3/Scott_Joplin_-_The_Entertainer_%281902%29.ogg"
+    
+    # Add a standard browser User-Agent so Wikimedia doesn't block the request
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
     try:
-        music_res = requests.get(music_url)
+        music_res = requests.get(music_url, headers=headers)
         music_res.raise_for_status()
         with open(audio_path, "wb") as f:
             f.write(music_res.content)
+        print("Music downloaded successfully.")
     except Exception as e:
-        print(f"Warning: Could not download music. Please place a file named {audio_path} manually.")
+        print(f"Warning: Could not download music ({e}).")
 
 print("Converting image and music to 1080x1920 6-second MP4 video with FFmpeg...")
 
-ffmpeg_cmd = [
-    "ffmpeg", "-y",
-    "-loop", "1",
-    "-i", image_path,
-    "-i", audio_path,
-    "-c:v", "libx264",
-    "-t", "6",
-    "-pix_fmt", "yuv420p",
-    "-c:a", "aac",
-    "-b:a", "192k",
-    "-shortest",
-    video_path
-]
+# Failsafe: Check if the audio file actually exists before building the command
+if os.path.exists(audio_path):
+    ffmpeg_cmd = [
+        "ffmpeg", "-y",
+        "-loop", "1",
+        "-i", image_path,
+        "-i", audio_path,
+        "-c:v", "libx264",
+        "-t", "6",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        "-shortest",
+        video_path
+    ]
+else:
+    print("Fallback activated: Using a silent audio track because the music file is missing.")
+    ffmpeg_cmd = [
+        "ffmpeg", "-y",
+        "-loop", "1",
+        "-i", image_path,
+        "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+        "-c:v", "libx264",
+        "-t", "6",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-shortest",
+        video_path
+    ]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Video reel file created successfully with audio.")
+print("Video reel file created successfully.")
 
 # --- 8. Format Social Media Caption Text ---
 post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
