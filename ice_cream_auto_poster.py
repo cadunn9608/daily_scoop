@@ -5,14 +5,48 @@ import requests
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
-from google.genai import types
 
 def make_bold(text):
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
     return text.translate(str.maketrans(normal, bold))
 
-# Initialize the modern Gemini client
+def get_valid_facebook_token():
+    """Automatically exchanges short-lived tokens for long-lived page tokens if App credentials are provided."""
+    app_id = os.environ.get("FACEBOOK_APP_ID")
+    app_secret = os.environ.get("FACEBOOK_APP_SECRET")
+    initial_token = os.environ.get("FACEBOOK_ACCESS_TOKEN")
+    page_id = os.environ.get("FACEBOOK_PAGE_ID")
+
+    if not app_id or not app_secret:
+        return initial_token
+
+    try:
+        exchange_url = "https://graph.facebook.com/v18.0/oauth/access_token"
+        params = {
+            "grant_type": "fb_exchange_token",
+            "client_id": app_id,
+            "client_secret": app_secret,
+            "fb_exchange_token": initial_token
+        }
+        res = requests.get(exchange_url, params=params).json()
+        long_lived_user_token = res.get("access_token")
+        
+        if not long_lived_user_token:
+            return initial_token
+
+        pages_url = "https://graph.facebook.com/v18.0/me/accounts"
+        pages_params = {"access_token": long_lived_user_token}
+        pages_res = requests.get(pages_url, params=pages_params).json()
+
+        for page in pages_res.get("data", []):
+            if page.get("id") == page_id:
+                return page.get("access_token")
+
+        return long_lived_user_token
+    except Exception:
+        return initial_token
+
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 # --- 1. Load History to Prevent Repeats ---
@@ -22,16 +56,16 @@ if os.path.exists(history_file):
     with open(history_file, "r", encoding="utf-8") as f:
         past_trivia = [line.strip() for line in f if line.strip()]
 
-# Keep the last 60 topics in the prompt context to prevent bloating
-recent_history = past_trivia[-60:] if past_trivia else []
+recent_history = past_trivia[-80:] if past_trivia else []
 history_exclusion = ""
 if recent_history:
     history_exclusion = (
-        " CRITICAL REQUIREMENT: Do not repeat, resemble, or touch upon any of these previously used trivia topics: "
+        " STRICT BLACKLIST — DO NOT mention, reference, or write about any of these past subjects, ingredients, or themes: "
         + " | ".join(recent_history)
+        + ". Choose a completely different country, ingredient, science concept, or historical era."
     )
 
-# --- 2. Fully Dynamic Topic Generation with History Blacklist ---
+# --- 2. Fully Dynamic Topic Generation with Fallback Rotation ---
 trivia_prompt = (
     "Generate a completely random, fascinating, and unique ice cream trivia fact (maximum 3 short sentences total). "
     "To ensure variety, choose an unexpected angle—it could be an obscure historical event, a bizarre ancient or modern flavor, "
@@ -43,11 +77,11 @@ trivia_prompt = (
 
 ai_trivia_raw = None
 text_models_to_try = [
-    "gemini-3.8-flash",
-    "gemini-3.7-flash",
-    "gemini-3.6-flash",
-    "gemini-3.5-flash",
     "gemini-2.5-flash",
+    "gemini-3.5-flash",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-3.8-flash",
     "gemini-flash-latest"
 ]
 
@@ -81,7 +115,7 @@ for p in prefixes_to_strip:
         cleaned_trivia = cleaned_trivia[len(p):].strip()
         break
 
-# Append the new unique trivia to history.txt
+# Append the new unique trivia to history.txt immediately
 with open(history_file, "a", encoding="utf-8") as f:
     f.write(cleaned_trivia + "\n")
 print("Saved new trivia fact to history.txt")
@@ -156,10 +190,10 @@ print(f"Generating cartoon background image with prompt: {image_prompt}")
 
 image_bytes = None
 image_models_to_try = [
+    "gemini-2.5-flash-image",
     "gemini-3.1-flash-image",
     "gemini-3.1-flash-image-preview",
-    "gemini-3-pro-image",
-    "gemini-2.5-flash-image"
+    "gemini-3-pro-image"
 ]
 
 for img_model in image_models_to_try:
@@ -264,30 +298,9 @@ engagement_cta = (
 )
 post_text = post_header + ai_trivia_formatted + engagement_cta
 
-# --- 8. Exchange/Refresh Facebook Token ---
-app_id = os.environ["FACEBOOK_APP_ID"]
-app_secret = os.environ["FACEBOOK_APP_SECRET"]
-current_token = os.environ["FACEBOOK_ACCESS_TOKEN"]
-
-refresh_url = "https://graph.facebook.com/v18.0/oauth/access_token"
-refresh_params = {
-    "grant_type": "fb_exchange_token",
-    "client_id": app_id,
-    "client_secret": app_secret,
-    "fb_exchange_token": current_token
-}
-
-try:
-    print("Refreshing Facebook access token...")
-    refresh_res = requests.get(refresh_url, params=refresh_params).json()
-    active_token = refresh_res.get("access_token", current_token)
-    print("Token refreshed successfully.")
-except Exception as e:
-    print(f"Failed to refresh token: {e}. Using existing token.")
-    active_token = current_token
-
-# --- 9. Post the Branded Photo + Caption to Facebook Page Feed ---
+# --- 8. Post the Branded Photo + Caption to Facebook Page Feed ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
+active_token = get_valid_facebook_token()
 post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
 
 print(f"Posting photo to Facebook Page: {page_id}")
