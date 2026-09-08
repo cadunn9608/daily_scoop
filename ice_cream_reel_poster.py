@@ -89,13 +89,14 @@ for attempt in range(3):
     trivia_prompt = (
         f"Attempt {attempt+1}: Act as an expert trivia host and culinary historian. "
         "Generate 1 captivating, unique ice cream trivia fact from history. "
-        "Format your response into 3 distinct lines using safe text symbols (like ★ or ►) instead of emojis: "
+        "Format your response with explicit line breaks: "
         "Line 1: A catchy hook/intro with a symbol (e.g., [★] COOL COLD HISTORY!). "
         "Line 2: The trivia question or setup (e.g., What iconic sweet treat was born from a boy's indecision?). "
+        "[Leave a blank line here] "
         "Line 3: The exciting answer and brief explanation with a symbol (e.g., [►] ANSWER: The Eskimo Pie, invented by an Iowa teacher!). "
         "Keep the total word count under 40 words so it fits comfortably in a mobile video overlay box with large font. "
         f"{history_exclusion} "
-        "Output only the 3 text lines without Markdown bolding asterisks."
+        "Output only the text lines without Markdown bolding asterisks."
     )
 
     candidate_text = None
@@ -191,7 +192,7 @@ if not image_bytes:
 
 image_path = "temp_reel_image.png"
 
-# --- 6. Image Resizing (9:16 Ratio) & Render Text Box Overlay ---
+# --- 6. Image Resizing (9:16 Ratio) & Render Text Box with Explicit Line Break ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 
 target_width = 1080
@@ -222,42 +223,46 @@ except IOError:
     font = ImageFont.load_default()
     header_font = font
 
-trivia_parts = [p.strip() for p in cleaned_trivia.split("\n") if p.strip()]
-header_text = trivia_parts[0] if len(trivia_parts) > 0 else "[★] ICE CREAM HISTORY"
-body_text_paragraphs = trivia_parts[1:] if len(trivia_parts) > 1 else []
+# Separate sections cleanly
+trivia_lines = [p.strip() for p in cleaned_trivia.split("\n") if p.strip()]
+header_text = trivia_lines[0] if len(trivia_lines) > 0 else "[★] ICE CREAM HISTORY"
+question_text = trivia_lines[1] if len(trivia_lines) > 1 else ""
+answer_text = " ".join(trivia_lines[2:]) if len(trivia_lines) > 2 else ""
 
 box_x0 = 50
 box_x1 = img_width - 50
 max_text_width = (box_x1 - box_x0) - 60
 
-wrapped_header_lines = []
-current_line = ""
-for word in header_text.split():
-    test_line = f"{current_line} {word}".strip()
-    if header_font.getlength(test_line) <= max_text_width:
-        current_line = test_line
-    else:
-        if current_line: wrapped_header_lines.append(current_line)
-        current_line = word
-if current_line: wrapped_header_lines.append(current_line)
-
-wrapped_body_lines = []
-for paragraph in body_text_paragraphs:
+def wrap_text(text, font_obj, max_w):
+    lines = []
     current_line = ""
-    for word in paragraph.split():
+    for word in text.split():
         test_line = f"{current_line} {word}".strip()
-        if font.getlength(test_line) <= max_text_width:
+        if font_obj.getlength(test_line) <= max_w:
             current_line = test_line
         else:
-            if current_line: wrapped_body_lines.append(current_line)
+            if current_line: lines.append(current_line)
             current_line = word
-    if current_line: wrapped_body_lines.append(current_line)
+    if current_line: lines.append(current_line)
+    return lines
+
+wrapped_header = wrap_text(header_text, header_font, max_text_width)
+wrapped_question = wrap_text(question_text, font, max_text_width)
+wrapped_answer = wrap_text(answer_text, font, max_text_width)
 
 header_line_height = 52
 body_line_height = 46
 padding = 35
+section_gap = 25  # Explicit visual line break spacing between question and answer
 
-total_box_height = (len(wrapped_header_lines) * header_line_height) + (len(wrapped_body_lines) * body_line_height) + (padding * 2) + 15
+total_box_height = (
+    (len(wrapped_header) * header_line_height) + 
+    (len(wrapped_question) * body_line_height) + 
+    (len(wrapped_answer) * body_line_height) + 
+    section_gap + 
+    (padding * 2) + 15
+)
+
 box_y0 = 120
 box_y1 = box_y0 + total_box_height
 
@@ -278,26 +283,35 @@ draw = ImageDraw.Draw(img)
 text_x = box_x0 + 30
 text_y = box_y0 + padding
 
-for line in wrapped_header_lines:
+# Draw Header
+for line in wrapped_header:
     draw.text((text_x, text_y), line, fill=(252, 211, 77, 255), font=header_font)
     text_y += header_line_height
 
-text_y += 15
+text_y += 10
 
-for line in wrapped_body_lines:
+# Draw Question
+for line in wrapped_question:
+    draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
+    text_y += body_line_height
+
+# Insert explicit line break gap before the answer block
+text_y += section_gap
+
+# Draw Answer
+for line in wrapped_answer:
     draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
     text_y += body_line_height
 
 img.save(image_path, "PNG")
 
-# --- 7. Download Real Free Stock Piano Jingle with Proper Bot Headers ---
-audio_path = "background_music.ogg"
+# --- 7. Download and Standardize Stock Audio Track ---
+raw_audio_path = "raw_music.ogg"
+audio_path = "background_music.mp3"
 video_path = "temp_reel_video.mp4"
 
-print("Downloading real stock piano/ragtime background jingle...")
-# Classic upbeat public-domain piano track from Wikimedia Commons
+print("Downloading stock music track...")
 music_url = "https://upload.wikimedia.org/wikipedia/commons/e/e4/Scott_Joplin_-_Easy_Winners_%281901%29.ogg"
-
 headers = {
     "User-Agent": "DailyScoopBot/1.0 (Contact: admin@dailyscoop.local; Automated educational media project)"
 }
@@ -305,22 +319,35 @@ headers = {
 try:
     music_res = requests.get(music_url, headers=headers, timeout=20)
     music_res.raise_for_status()
-    with open(audio_path, "wb") as f:
+    with open(raw_audio_path, "wb") as f:
         f.write(music_res.content)
-    print("Stock music downloaded successfully.")
+    
+    print("Standardizing audio track to MP3...")
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-i", raw_audio_path,
+        "-vn",
+        "-ar", "44100",
+        "-ac", "2",
+        "-b:a", "192k",
+        audio_path
+    ], check=True)
+    print("Audio standardization complete.")
 except Exception as e:
-    print(f"Warning: Stock audio download encountered an issue ({e}). Generating silent fallback track.")
-    # Fallback quiet track if network hiccup occurs
+    print(f"Warning: Stock audio download/conversion failed ({e}). Creating silent fallback track.")
     subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-t", "6", audio_path], check=True)
 
-# --- 8. Convert Image and Stock Audio to MP4 Video with FFmpeg ---
-print("Converting image and stock audio to 1080x1920 6-second MP4 video with FFmpeg...")
+# --- 8. Combine Image and Audio with Explicit Stream Mapping ---
+print("Combining image and standardized audio into 1080x1920 6-second MP4 video...")
 ffmpeg_cmd = [
     "ffmpeg", "-y",
     "-loop", "1",
     "-i", image_path,
     "-i", audio_path,
+    "-map", "0:v:0",
+    "-map", "1:a:0",
     "-c:v", "libx264",
+    "-tune", "stillimage",
     "-t", "6",
     "-pix_fmt", "yuv420p",
     "-c:a", "aac",
@@ -330,7 +357,7 @@ ffmpeg_cmd = [
 ]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Video reel file created successfully with real stock music.")
+print("Video reel created successfully with locked-in audio stream.")
 
 # --- 9. Format Social Media Caption Text ---
 post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
@@ -340,7 +367,7 @@ engagement_cta = (
 )
 post_text = post_header + ai_trivia_formatted + engagement_cta
 
-# --- 10. Post Video to Facebook Reels Endpoint ---
+# --- 10. Post Video to Facebook Reels (Sharing to both Reels Tab & Main Feed) ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
 active_token = get_valid_facebook_token()
 post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
@@ -350,6 +377,7 @@ with open(video_path, "rb") as vid_file:
     payload = {
         "description": post_text,
         "media_type": "REELS",
+        "share_to_feed": "true",
         "access_token": active_token
     }
     try:
