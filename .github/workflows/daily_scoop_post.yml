@@ -2,15 +2,14 @@ name: Daily Scoop Market Intelligence Pipeline
 
 on:
   schedule:
-    - cron: '0 14 * * *' # Runs daily at 2:00 PM UTC
-  workflow_dispatch:      # Allows manual trigger from GitHub UI
+    - cron: '0 8 * * *' # Runs daily at 8:00 AM UTC (adjust as needed)
+  workflow_dispatch: # Allows manual trigger from the Actions tab
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -18,17 +17,14 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install dependencies directly
         run: |
           python -m pip install --upgrade pip
-          pip install google-genai tensorflow numpy requests
+          pip install pandas matplotlib tensorflow google-genai requests numpy
 
-      - name: Run Market Intelligence & Post to Facebook
+      - name: Run market intelligence pipeline
         env:
-          FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
-          FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
           FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
           FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          python main.py
+        run: python main.py
