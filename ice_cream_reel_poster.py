@@ -3,9 +3,6 @@ import time
 import random
 import subprocess
 import requests
-import wave
-import math
-import struct
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
@@ -293,59 +290,31 @@ for line in wrapped_body_lines:
 
 img.save(image_path, "PNG")
 
-# --- 7. Locally Generate Rich Multi-Note Synth Chords (Warm Instrument Timbre) ---
-audio_path = "background_music.wav"
+# --- 7. Download Real Free Stock Piano Jingle with Proper Bot Headers ---
+audio_path = "background_music.ogg"
 video_path = "temp_reel_video.mp4"
 
-print("Generating rich multi-note synth chord melody...")
-sample_rate = 44100
-duration = 6.0
-num_samples = int(sample_rate * duration)
+print("Downloading real stock piano/ragtime background jingle...")
+# Classic upbeat public-domain piano track from Wikimedia Commons
+music_url = "https://upload.wikimedia.org/wikipedia/commons/e/e4/Scott_Joplin_-_Easy_Winners_%281901%29.ogg"
 
-# Multi-note chord progression (C Major -> A minor -> F Major -> G Major)
-chords = [
-    [261.63, 329.63, 392.00, 523.25],  # C Major chord
-    [220.00, 261.63, 329.63, 440.00],  # A minor chord
-    [349.23, 440.00, 523.25, 698.46],  # F Major chord
-    [392.00, 493.88, 587.33, 783.99]   # G Major chord
-]
-chord_duration = duration / len(chords)
+headers = {
+    "User-Agent": "DailyScoopBot/1.0 (Contact: admin@dailyscoop.local; Automated educational media project)"
+}
 
-audio_data = []
-for i in range(num_samples):
-    t = i / sample_rate
-    chord_idx = int(t / chord_duration) % len(chords)
-    current_chord = chords[chord_idx]
-    
-    local_t = t % chord_duration
-    # Music-box envelope (pluck attack with gentle decay)
-    envelope = math.exp(-3.5 * (local_t % (chord_duration / 2)))
-    
-    val = 0.0
-    for freq in current_chord:
-        # Layer harmonics (fundamental + 2nd & 3rd overtones) for a rich instrument sound
-        wave_val = (
-            math.sin(2 * math.pi * freq * t) * 0.5 +
-            math.sin(2 * math.pi * freq * 2 * t) * 0.25 +
-            math.sin(2 * math.pi * freq * 3 * t) * 0.125
-        )
-        val += wave_val
-        
-    val = (val / len(current_chord)) * envelope * 0.45
-    
-    sample = int(val * 32767)
-    audio_data.append(struct.pack('<h', max(-32768, min(32767, sample))))
+try:
+    music_res = requests.get(music_url, headers=headers, timeout=20)
+    music_res.raise_for_status()
+    with open(audio_path, "wb") as f:
+        f.write(music_res.content)
+    print("Stock music downloaded successfully.")
+except Exception as e:
+    print(f"Warning: Stock audio download encountered an issue ({e}). Generating silent fallback track.")
+    # Fallback quiet track if network hiccup occurs
+    subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-t", "6", audio_path], check=True)
 
-with wave.open(audio_path, "w") as wav_file:
-    wav_file.setnchannels(1)
-    wav_file.setsampwidth(2)
-    wav_file.setframerate(sample_rate)
-    wav_file.writeframes(b''.join(audio_data))
-
-print("Rich chord audio generated successfully.")
-
-# --- 8. Convert Image and Audio to MP4 Video with FFmpeg ---
-print("Converting image and rich audio to 1080x1920 6-second MP4 video with FFmpeg...")
+# --- 8. Convert Image and Stock Audio to MP4 Video with FFmpeg ---
+print("Converting image and stock audio to 1080x1920 6-second MP4 video with FFmpeg...")
 ffmpeg_cmd = [
     "ffmpeg", "-y",
     "-loop", "1",
@@ -361,7 +330,7 @@ ffmpeg_cmd = [
 ]
 
 subprocess.run(ffmpeg_cmd, check=True)
-print("Video reel file created successfully with multi-instrument synth chords.")
+print("Video reel file created successfully with real stock music.")
 
 # --- 9. Format Social Media Caption Text ---
 post_header = make_bold("🍦 THE DAILY ICE CREAM REEL WITH PETEY & ANDREW 🐾\n\n")
@@ -391,4 +360,4 @@ with open(video_path, "rb") as vid_file:
         else:
             print(f"Failed to post Reel to Facebook: {res_data}")
     except Exception as e:
-            print(f"Exception occurred while posting Reel to Facebook: {e}")
+        print(f"Exception occurred while posting Reel to Facebook: {e}")
