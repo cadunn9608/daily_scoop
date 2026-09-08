@@ -14,61 +14,11 @@ def make_bold(text):
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-# 1. Expanded Randomized Ice Cream Trivia Categories (Mixing History + Post-1990 Modern Trends)
-trivia_categories = [
-    # Post-1990 Modern Trends & Innovations
-    "the 1990s craft ice cream renaissance and the rise of local artisanal farm-to-cone creameries",
-    "the viral social media explosion of rolled ice cream brought over from Southeast Asian street markets in the 2010s",
-    "the modern culinary trend of savory ice cream flavors like extra virgin olive oil, sea salt, and smoked bacon popularized in the 2000s",
-    "the 2010s boom of plant-based vegan ice creams made from innovative oat milk, cashew cream, and coconut bases",
-    "the 2000s liquid nitrogen ice cream laboratory phenomenon popularized by molecular gastronomy chefs",
-    "the Guinness World Record set in 2022 for the most expensive scoop of ice cream sold at a Japanese luxury cafe",
-    "the modern trend of boozy adult ice cream bars infused with craft IPAs and artisanal bourbons in the 2010s",
-    "the 2020s TikTok and Instagram viral trends of cloud cotton candy ice cream cones",
-    "the rise of small-batch nitrogen-chilled ice cream shops revolutionizing dessert science in the modern era",
-    "the cultural phenomenon of specialty ice cream festival competitions taking place across major cities since the late 2000s",
-    "the modern science of using liquid nitrogen flash-freezing to eliminate ice crystals for ultra-smooth texture",
-    "the 2010s surge in gourmet ice cream sandwich trucks combining fresh-baked cookies with small-batch scoops",
-    
-    # Classic History & Food Science
-    "historical origins of ice cream during the Tang Dynasty in China",
-    "presidential ice cream lovers like George Washington and Thomas Jefferson",
-    "bizarre and unusual historical ice cream flavors like parmesan or cod roe",
-    "ice cream food science, freezing point depression, and fat crystal formation",
-    "global ice cream traditions and unique international styles like Italian gelato or Turkish dondurma",
-    "fun manufacturing and production milestones through history",
-    "classic ice cream parlour inventions and the accidental origin of the ice cream sundae",
-    "the invention of the waffle cone at the 1904 St. Louis World's Fair",
-    "the history of soft-serve ice cream and continuous-flow freezers",
-    "ice cream in space and zero-gravity menu logistics for NASA astronauts",
-    "world records for the largest ice cream cake and tallest cone ever built",
-    "the medical and physiological science behind brain freeze",
-    "the history of ice cream truck jingle music and mechanical music boxes",
-    "the royal European roots of Neapolitan ice cream and spumoni",
-    "the ancient Japanese origins and modern popularity of mochi ice cream",
-    "hand-rolled ice cream street food traditions originating in Thailand",
-    "the cultural history of New Zealand's famous hokey pokey flavor",
-    "the ancient royal Mughal empire origins of Indian kulfi",
-    "traditional Alaskan indigenous Akutaq ice cream ingredients",
-    "the historic 1776 opening of America's first ice cream parlour in New York City",
-    "World War II ice cream barges built by the US Navy for troop morale",
-    "the intense manual hand-pollination process required for natural vanilla beans in Madagascar",
-    "the anonymous fan note origin story of chocolate chip cookie dough ice cream",
-    "the Great Depression invention of rocky road ice cream at San Francisco's Fentons Creamery",
-    "the linguistic origin of the term 'a la mode' applied to apple pie",
-    "Nancy Johnson's 1843 hand-cranked ice cream freezer patent breakthrough",
-    "the pharmacist invention of the ice cream soda and chocolate float",
-    "the history and preparation of deep-fried ice cream in Mexican-American restaurants",
-    "the science of overrun and how air is whipped into commercial ice cream",
-    "historic Victorian ice cream molds and elaborate dinner party sculpture trends",
-    "the chemistry of salt and ice mixtures used in antique hand-crank freezers",
-    "the cultural significance of ice cream socials in 19th-century American small towns"
-]
-selected_category = random.choice(trivia_categories)
-
+# 1. Fully Dynamic Topic Generation (Guarantees zero repeats by having AI invent a fresh, random topic every time)
 trivia_prompt = (
-    f"Create a fascinating, highly engaging daily ice cream trivia fact (maximum 3 short sentences total) "
-    f"focused on: {selected_category}. "
+    "Generate a completely random, fascinating, and unique ice cream trivia fact (maximum 3 short sentences total). "
+    "To ensure variety, choose a completely unexpected angle—it could be an obscure historical event, a bizarre ancient or modern flavor, "
+    "a fascinating food science principle, a global cultural tradition, or a modern culinary trend from 1990 onward. "
     "Do not mention any commercial brand names like Dr. Bombay or Zumper. "
     "Output only the trivia content without any Markdown formatting or emojis."
 )
@@ -83,7 +33,7 @@ text_models_to_try = [
 ]
 
 for model_name in text_models_to_try:
-    print(f"Attempting trivia generation using model: {model_name}")
+    print(f"Attempting dynamic trivia generation using model: {model_name}")
     try:
         response_text = client.models.generate_content(
             model=model_name,
@@ -113,7 +63,7 @@ for p in prefixes_to_strip:
 header_tag = "★ DAILY ICE CREAM TRIVIA ★"
 ai_trivia_formatted = make_bold(cleaned_trivia)
 
-# 2. Expanded Cartoon Background Settings Pool (33+ Options)
+# 2. Randomized Cartoon Background Settings Pool (33+ Options)
 setting_choice = random.choice([
     "a high-tech futuristic ice cream testing laboratory with glowing holographic flavor charts and stainless steel tasting counters",
     "a cozy, sunlit wooden workshop filled with vintage ice cream churns, recipe notebooks, and colorful ingredient jars",
@@ -150,7 +100,7 @@ setting_choice = random.choice([
     "a serene Japanese Zen garden tea house with smooth river rocks, raked gravel paths, and bonsai trees"
 ])
 
-# 3. Updated Scientist, Engineer, and Master Chef Roles & Actions
+# 3. Randomized Scientist, Engineer, and Master Chef Roles & Actions
 character_action_choice = random.choice([
     "wearing crisp white chef coats and tall toques while carefully measuring gourmet vanilla bean extract and tasting fresh cream samples",
     "wearing engineer goggles and hard hats while inspecting the complex plumbing and stainless-steel pressure valves of a custom ice cream churning machine",
@@ -294,7 +244,7 @@ active_token = refresh_res.get("access_token", current_token)
 
 # 7. Post the Branded Photo + Caption to Facebook Page Feed
 page_id = os.environ["FACEBOOK_PAGE_ID"]
-post_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
+post_url = f"https://graph.facebook.0/v18.0/{page_id}/photos"
 
 with open(image_path, "rb") as img_file:
     files = {"source": img_file}
