@@ -39,8 +39,8 @@ def fetch_fred_production_data():
     df = df.dropna().copy()
     df['date'] = pd.to_datetime(df['date'])
     
-    # Filter for the last 10 years (120 months) for a clean timeline window
-    df = df.sort_values('date').tail(120).reset_index(drop=True)
+    # Filter for the last 4 years (48 months) to highlight recent seasonal summer spikes clearly
+    df = df.sort_values('date').tail(48).reset_index(drop=True)
     return df
 
 def run_tensorflow_lstm_model(df):
@@ -69,13 +69,24 @@ def run_tensorflow_lstm_model(df):
     return model, mean, std
 
 def generate_forecast_chart(df):
-    """Generates a professional time-series chart of ice cream manufacturing trends."""
-    plt.figure(figsize=(10, 5))
-    plt.plot(df['date'], df['production'], marker='o', color='teal', linewidth=2, label='Monthly Production Index')
-    plt.title('U.S. Ice Cream & Frozen Dessert Manufacturing Index (FRED)', fontsize=12, fontweight='bold')
-    plt.xlabel('Timeline')
+    """Generates a professional time-series chart with shaded summer production peaks."""
+    plt.figure(figsize=(11, 5))
+    
+    # Plot the core production line
+    plt.plot(df['date'], df['production'], marker='o', color='teal', linewidth=2.5, label='Monthly Production Index', zorder=3)
+    
+    # Highlight summer months (June, July, August) with vertical shading spans
+    years = df['date'].dt.year.unique()
+    for year in years:
+        summer_start = pd.to_datetime(f"{year}-06-01")
+        summer_end = pd.to_datetime(f"{year}-08-31")
+        plt.axvspan(summer_start, summer_end, color='orange', alpha=0.2, label='Peak Summer (Jun-Aug)' if year == years[0] else "", zorder=1)
+
+    plt.title('U.S. Ice Cream Manufacturing Index — Summer Seasonality Analysis', fontsize=12, fontweight='bold')
+    plt.xlabel('Timeline (Monthly)')
     plt.ylabel('Production Index Value (2017=100)')
-    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.grid(True, linestyle='--', alpha=0.6, zorder=2)
+    plt.legend(loc='upper left')
     plt.xticks(rotation=45)
     plt.tight_layout()
     
@@ -110,41 +121,29 @@ def main():
         print("❌ Error: Missing required environment variables.")
         sys.exit(1)
 
-    print("Starting FRED Neural Network Pipeline...")
+    print("Starting FRED Neural Network Pipeline with Summer Seasonality Highlighting...")
     verify_facebook_token(token, page_id)
 
-    # 1. Fetch real federal economic time-series data
     df = fetch_fred_production_data()
-
-    # 2. Run TensorFlow LSTM model
     _, _, _ = run_tensorflow_lstm_model(df)
-
-    # 3. Generate Visualization Chart
     chart_path = generate_forecast_chart(df)
 
-    # 4. Build Caption with Explicit Intro and Source Attribution
     facebook_caption = (
-        "📈 Quantitative Market Intelligence: U.S. Ice Cream Manufacturing Trends\n\n"
-        "What you're looking at: This chart maps official monthly industrial production and manufacturing output volume "
-        "for the U.S. ice cream and frozen dessert sector over a 10-year timeline. We run these historical records through "
-        "a custom TensorFlow LSTM neural network to mathematically isolate long-term production cycles, seasonal factory ramps, and output trends.\n\n"
+        "☀️ Quantitative Market Intelligence: Tracking Summer Ice Cream Spikes\n\n"
+        "What you're looking at: Shaded orange bands highlight peak summer manufacturing windows (June–August) "
+        "across recent production cycles. We pass these monthly timelines through our custom TensorFlow LSTM model "
+        "to track how aggressively factories ramp up production ahead of the warm-weather demand surge.\n\n"
         "Data Source: Federal Reserve Bank of St. Louis (FRED) / U.S. Industrial Production Index for Ice Cream and Frozen "
         "Dessert Manufacturing (Series ID: IPN31152N), published monthly by the Board of Governors of the Federal Reserve System."
     )
 
-    # 5. Publish to Facebook Page
-    success = post_photo_to_facebook(
-        chart_path, 
-        facebook_caption, 
-        page_id, 
-        token
-    )
+    success = post_photo_to_facebook(chart_path, facebook_caption, page_id, token)
 
     if not success:
         print("❌ Pipeline finished with errors during Facebook publishing.")
         sys.exit(1)
     
-    print("✅ Pipeline completed successfully using verified FRED time-series data!")
+    print("✅ Pipeline completed successfully with visual summer seasonality shading!")
 
 if __name__ == "__main__":
     main()
