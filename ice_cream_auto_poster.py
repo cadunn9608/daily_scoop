@@ -76,8 +76,12 @@ text_models_to_try = [
     "gemini-flash-latest"
 ]
 
-# Domain stop words to ignore during similarity checks so common words don't block unique posts
-domain_stopwords = {"cream", "answer", "history", "ice", "scoop", "trivia", "question", "fact"}
+# Comprehensive domain stop words to ignore during similarity checks
+domain_stopwords = {
+    "cream", "answer", "history", "ice", "scoop", "scoops", "trivia", 
+    "question", "fact", "during", "famous", "created", "invented", 
+    "popular", "century", "people", "version", "first", "about", "their"
+}
 
 # Try up to 3 generation attempts to enforce absolute uniqueness
 for attempt in range(3):
@@ -101,14 +105,16 @@ for attempt in range(3):
             time.sleep(1)
 
     if candidate_text:
-        # Keyword overlap check with punctuation stripping and stopword filtering to block accidental duplicate topics
+        # Keyword overlap check with clean punctuation stripping and expanded stopword filtering
         candidate_lower = candidate_text.lower()
         is_too_similar = False
         for past in recent_history:
-            past_words = set(w.strip('.,!?:') for w in past.lower().split() if len(w) > 4) - domain_stopwords
-            candidate_words = set(w.strip('.,!?:') for w in candidate_lower.split() if len(w) > 4) - domain_stopwords
+            past_words = set(w.strip('.,!?:;"()') for w in past.lower().split() if len(w) > 4) - domain_stopwords
+            candidate_words = set(w.strip('.,!?:;"()') for w in candidate_lower.split() if len(w) > 4) - domain_stopwords
             common_words = past_words.intersection(candidate_words)
-            if len(common_words) >= 4:
+            
+            # Require at least 6 unique overlapping substantive words before flagging as a duplicate
+            if len(common_words) >= 6:
                 is_too_similar = True
                 print(f"Rejected candidate due to keyword overlap: {common_words}")
                 break
