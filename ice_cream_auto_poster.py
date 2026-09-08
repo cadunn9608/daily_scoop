@@ -4,24 +4,18 @@ import random
 import requests
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-# --- Configuration Setup ---
 def make_bold(text):
-    # Helper to create bold text for Facebook captions using Unicode symbols
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜JKLMNOPQRSTUVWXYZ𝗮𝗯𝗰𝗱efghijklmnopqrstuvwxyz𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
+    bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
     return text.translate(str.maketrans(normal, bold))
 
-# Configure Gemini
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-
-# Initialize Models
-text_model = genai.GenerativeModel('gemini-1.5-flash')
-image_model = genai.GenerativeModel('gemini-1.5-flash') # Gemini 1.5 Flash handles multimodal input/output well for this
+# Initialize the modern Gemini client
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 # --- 1. Fully Dynamic Topic Generation ---
-# Guarantees zero repeats by having AI invent a fresh, random topic every time.
 trivia_prompt = (
     "Generate a completely random, fascinating, and unique ice cream trivia fact (maximum 3 short sentences total). "
     "To ensure variety, choose an unexpected angle—it could be an obscure historical event, a bizarre ancient or modern flavor, "
@@ -31,20 +25,29 @@ trivia_prompt = (
 )
 
 ai_trivia_raw = None
-for attempt in range(3): # Retry logic
+text_models_to_try = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash"
+]
+
+for model_name in text_models_to_try:
+    print(f"Attempting dynamic trivia generation using model: {model_name}")
     try:
-        print(f"Attempting dynamic trivia generation (Attempt {attempt+1})...")
-        response_text = text_model.generate_content(trivia_prompt)
-        ai_trivia_raw = response_text.text.strip()
+        response = client.models.generate_content(
+            model=model_name,
+            contents=trivia_prompt,
+        )
+        ai_trivia_raw = response.text.strip()
         if ai_trivia_raw:
-            print("Successfully generated trivia.")
+            print(f"Successfully generated trivia using {model_name}!")
             break
     except Exception as e:
-        print(f"Trivia generation failed: {e}")
-        time.sleep(5)
+        print(f"Model {model_name} failed with error: {e}. Trying next...")
+        time.sleep(3)
 
 if not ai_trivia_raw:
-    raise Exception("Failed to generate trivia content after multiple attempts.")
+    raise Exception("All text models failed to generate trivia content.")
 
 # Clean up common prefixes
 cleaned_trivia = ai_trivia_raw
@@ -126,23 +129,30 @@ image_prompt = (
 
 print(f"Generating cartoon background image with prompt: {image_prompt}")
 
-# Image Generation Loop
 image_bytes = None
-for attempt in range(2): # Try standard model, then preview if needed
+image_models_to_try = ["gemini-3.1-flash-image", "gemini-3.1-flash-image-preview"]
+
+for img_model in image_models_to_try:
     try:
-        response = image_model.generate_content(image_prompt)
-        if response.text: # Check if safety filters blocked it
-             print(f"Safety Blocked Image Generation: {response.text}")
-             continue
-        image_bytes = response.candidates[0].content.parts[0].inline_data.data
-        print("Successfully generated background image.")
-        break
+        response = client.models.generate_content(
+            model=img_model,
+            contents=image_prompt,
+        )
+        for candidate in response.candidates:
+            for part in candidate.content.parts:
+                if part.inline_data and part.inline_data.data:
+                    image_bytes = part.inline_data.data
+                    break
+            if image_bytes:
+                break
+        if image_bytes:
+            print(f"Successfully generated background image using model: {img_model}")
+            break
     except Exception as e:
-        print(f"Image generation failed: {e}")
-        time.sleep(5)
+        print(f"Image model {img_model} failed: {e}. Trying next...")
 
 if not image_bytes:
-    raise Exception("Gemini image generation failed after multiple attempts.")
+    raise Exception("All Gemini image generation models failed to return image data.")
 
 image_path = "temp_trivia_image.png"
 
@@ -150,16 +160,13 @@ image_path = "temp_trivia_image.png"
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
-# Setup Fonts (Use fallback if system fonts aren't available)
 try:
     font = ImageFont.truetype("DejaVuSans.ttf", 18)
     header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
 except IOError:
-    print("Warning: Custom fonts not found. Using default font (text may look different).")
     font = ImageFont.load_default()
     header_font = font
 
-# Calculate box dimensions
 box_x0 = 40
 box_x1 = img_width - 40
 max_text_width = (box_x1 - box_x0) - 50
@@ -189,34 +196,28 @@ total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding
 box_y1 = img_height - 30
 box_y0 = box_y1 - total_box_height
 
-# Draw Overlay
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
 draw_overlay = ImageDraw.Draw(overlay)
 
-# Semi-transparent dark background
 draw_overlay.rounded_rectangle(
     [box_x0, box_y0, box_x1, box_y1],
     radius=16,
-    fill=(15, 23, 42, 235), # Slate 900 with high opacity
-    outline=(245, 158, 11, 255), # Amber 500 border
+    fill=(15, 23, 42, 235),
+    outline=(245, 158, 11, 255),
     width=3
 )
 
-# Composite overlay onto original image
 img = Image.alpha_composite(img, overlay).convert("RGB")
 draw = ImageDraw.Draw(img)
 
-# Draw Text
 text_x = box_x0 + 25
 text_y = box_y0 + 16
 
-# Header
-draw.text((text_x, text_y), header_tag, fill=(252, 211, 77, 255), font=header_font) # Amber 300
+draw.text((text_x, text_y), header_tag, fill=(252, 211, 77, 255), font=header_font)
 text_y += header_height
 
-# Body Trivia (Wrapped)
 for line in wrapped_lines:
-    draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font) # Slate 100
+    draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
     text_y += line_height
 
 img.save(image_path, "PNG")
