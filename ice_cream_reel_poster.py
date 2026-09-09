@@ -9,7 +9,7 @@ from google import genai
 
 def make_bold(text):
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    bold = "𝗔𝗕𝗖𝗗𝗘𝗙G𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
+    bold = "𝗔𝗕𝗖𝗗𝗘𝗙G𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝗅𝗆𝗇𝗈𝗉𝗊𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
     return text.translate(str.maketrans(normal, bold))
 
 def get_valid_facebook_token():
@@ -52,6 +52,18 @@ def get_valid_facebook_token():
     except Exception as e:
         print(f"Warning: Exception during token refresh: {e}")
         return initial_token
+
+def get_local_random_jingle():
+    audio_folder = "./no_copyright_music"
+    os.makedirs(audio_folder, exist_ok=True)
+    all_tracks = [f for f in os.listdir(audio_folder) if f.endswith('.mp3')]
+    
+    if not all_tracks:
+        raise Exception(f"CRITICAL: No MP3 tracks found in '{audio_folder}/'. Please check your repository directory.")
+    
+    # Pick a random track from your online repository folder for this specific Reel run
+    chosen_track = random.choice(all_tracks)
+    return os.path.join(audio_folder, chosen_track)
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
@@ -305,40 +317,12 @@ for line in wrapped_answer:
 
 img.save(image_path, "PNG")
 
-# --- 7. Robust Audio Download using Unblocked CDN Mirrors ---
-raw_audio_path = "raw_music.audio"
+# --- 7. Pull Unique Local Jingle from no_copyright_music/ ---
+raw_audio_path = get_local_random_jingle()
 audio_path = "background_music.aac"
 video_path = "final_reel_output.mp4"
 
-# Using reliable unblocked GitHub raw audio sample and archive.org mirrors
-audio_urls = [
-    "https://github.com/rafaelreis-hotmart/Audio-Sample-files/raw/master/sample.mp3",
-    "https://archive.org/download/joplin_ragtime_jop_01_the_enter/joplin_ragtime_jop_01_the_enter.ogg",
-    "https://upload.wikimedia.org/wikipedia/commons/e/e4/Scott_Joplin_-_Easy_Winners_%281901%29.ogg"
-]
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-}
-
-download_success = False
-for music_url in audio_urls:
-    try:
-        print(f"Downloading track from: {music_url}")
-        music_res = requests.get(music_url, headers=headers, timeout=25)
-        if music_res.status_code == 200 and len(music_res.content) > 10000:
-            with open(raw_audio_path, "wb") as f:
-                f.write(music_res.content)
-            download_success = True
-            print("Audio download successful.")
-            break
-    except Exception as e:
-        print(f"Download attempt failed: {e}")
-
-if not download_success:
-    raise Exception("CRITICAL: Failed to download stock music tracks from all available URLs.")
-
-print("Standardizing audio to strict Facebook Reels standard (48kHz stereo AAC)...")
+print(f"Standardizing audio from local repository track: {raw_audio_path}...")
 subprocess.run([
     "ffmpeg", "-y",
     "-i", raw_audio_path,
@@ -351,8 +335,8 @@ subprocess.run([
     audio_path
 ], check=True)
 
-# --- 8. Mux Video + Audio with Faststart Optimization ---
-print("Combining image and audio into optimized 1080x1920 MP4 video...")
+# --- 8. Mux Video + Audio with Faststart and 8-Second Duration (-t 8) ---
+print("Combining image and audio into optimized 1080x1920 MP4 video (8 seconds)...")
 ffmpeg_cmd = [
     "ffmpeg", "-y",
     "-loop", "1",
@@ -365,7 +349,7 @@ ffmpeg_cmd = [
     "-level", "4.0",
     "-tune", "stillimage",
     "-r", "30",
-    "-t", "6",
+    "-t", "8",          # Set target duration to exactly 8 seconds (fits your 6-10s window)
     "-pix_fmt", "yuv420p",
     "-c:a", "aac",
     "-b:a", "192k",
@@ -385,28 +369,51 @@ engagement_cta = (
 )
 post_text = post_header + ai_trivia_formatted + engagement_cta
 
-# --- 10. Post Video to Facebook Reels with Explicit File Tuple ---
+# --- 10. Post Video to Facebook via Official 3-Step Reels Publishing API ---
 page_id = os.environ["FACEBOOK_PAGE_ID"]
 active_token = get_valid_facebook_token()
-post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
+api_version = "v18.0"
+file_size = os.path.getsize(video_path)
 
-with open(video_path, "rb") as vid_file:
-    # Explicit tuple format prevents Meta's ingest gateway from rejecting format headers
-    files = {
-        "source": ("final_reel_output.mp4", vid_file, "video/mp4")
-    }
-    payload = {
-        "description": post_text,
-        "media_type": "REELS",
-        "share_to_feed": "true",
-        "access_token": active_token
-    }
-    try:
-        res = requests.post(post_url, data=payload, files=files)
-        res_data = res.json()
-        if "id" in res_data:
-            print(f"Successfully posted Reel video to Facebook! Post ID: {res_data['id']}")
-        else:
-            print(f"Failed to post Reel to Facebook: {res_data}")
-    except Exception as e:
-        print(f"Exception occurred while posting Reel to Facebook: {e}")
+print("Step 1: Initializing official Reel upload session...")
+init_url = f"https://graph.facebook.com/{api_version}/{page_id}/video_reels"
+init_payload = {
+    "upload_phase": "start",
+    "access_token": active_token
+}
+r = requests.post(init_url, data=init_payload)
+response_data = r.json()
+
+if "video_id" not in response_data or "upload_url" not in response_data:
+    raise Exception(f"Failed to initialize reel upload session: {response_data}")
+
+video_id = response_data["video_id"]
+upload_url = response_data["upload_url"]
+
+print(f"Step 2: Uploading binary data stream (Video ID: {video_id})...")
+upload_headers = {
+    "Authorization": f"OAuth {active_token}",
+    "offset": "0",
+    "file_size": str(file_size),
+    "Content-Type": "application/octet-stream"
+}
+with open(video_path, "rb") as video_file:
+    upload_response = requests.post(upload_url, data=video_file, headers=upload_headers)
+    print(f"Upload transmission status response: {upload_response.json()}")
+
+print("Step 3: Finishing and publishing Reel to feed...")
+finish_url = f"https://graph.facebook.com/{api_version}/{page_id}/video_reels"
+finish_payload = {
+    "upload_phase": "finish",
+    "video_id": video_id,
+    "video_state": "PUBLISHED",
+    "description": post_text,
+    "access_token": active_token
+}
+finish_response = requests.post(finish_url, data=finish_payload)
+result = finish_response.json()
+
+if result.get("success"):
+    print("Reel successfully published with audio track intact!")
+else:
+    print(f"Publishing completion response: {result}")
