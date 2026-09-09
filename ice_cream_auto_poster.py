@@ -253,8 +253,8 @@ img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
 try:
-    font = ImageFont.truetype("DejaVuSans.ttf", 15)       # Scaled down for comfortable spacing
-    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 20) # Scaled down header
+    font = ImageFont.truetype("DejaVuSans.ttf", 16)       # Balanced font size (16)
+    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 21) # Balanced header font (21)
 except IOError:
     font = ImageFont.load_default()
     header_font = font
@@ -280,8 +280,8 @@ for paragraph in cleaned_trivia.split("\n"):
     if current_line:
         wrapped_lines.append(current_line)
 
-line_height = 20  # Tighter, balanced line height
-header_height = 28 
+line_height = 22  # Balanced line spacing (22)
+header_height = 30 
 padding = 20
 total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding * 2)
 
