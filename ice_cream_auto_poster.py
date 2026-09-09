@@ -8,7 +8,7 @@ from google import genai
 
 def make_bold(text):
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    bold = "𝗔𝗕𝗖𝗗𝗘𝗙G𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
+    bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
     return text.translate(str.maketrans(normal, bold))
 
 def get_valid_facebook_token():
@@ -65,7 +65,7 @@ if recent_history:
         + ". Your topic must be fundamentally different in category, country, and science."
     )
 
-# --- 2. Dynamic Topic Generation with Built-In Validation Retry Loop ---
+# --- 2. Dynamic Topic Generation with Broad Brand & Flavor Pillars ---
 ai_trivia_raw = None
 text_models_to_try = [
     "gemini-2.5-flash",
@@ -83,13 +83,19 @@ domain_stopwords = {
     "popular", "century", "people", "version", "first", "about", "their"
 }
 
+broad_brand_pillars = [
+    "the surprising way a famous ice cream brand, parlor, or company got its start in the 19th or 20th century",
+    "how a classic ice cream flavor, topping, or popular treat was accidentally or intentionally invented",
+    "a fun historical milestone, cultural trend, or quirky milestone in the history of ice cream"
+]
+
 # Try up to 3 generation attempts to enforce absolute uniqueness
 for attempt in range(3):
+    selected_pillar = random.choice(broad_brand_pillars)
     trivia_prompt = (
-        f"Attempt {attempt+1}: Generate a completely random, fascinating, and unique ice cream trivia fact (maximum 3 short sentences total). "
-        "Choose an unexpected angle—focus on cultural oddities, historical figures, distribution methods, or manufacturing mechanics. "
+        f"Attempt {attempt+1}: Generate a fascinating, storytelling-style trivia fact about ice cream focused on {selected_pillar} (between 3 to 5 sentences long). "
+        "Write it like an engaging mini-story with a narrative arc, keeping it light, fun, and conversational. "
         "Do not mention glowing items, jellyfish, marine biology, or rare orchids. "
-        "Do not mention any commercial brand names."
         f"{history_exclusion} "
         "Output only the trivia content without any Markdown formatting or emojis."
     )
@@ -242,20 +248,20 @@ if not image_bytes:
 
 image_path = "temp_trivia_image.png"
 
-# --- 6. Process Image & Render Larger, Readable Text Box Overlay ---
+# --- 6. Process Image & Render Pixel-Perfect Text Box Overlay ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
 try:
-    font = ImageFont.truetype("DejaVuSans.ttf", 36)
-    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 44)
+    font = ImageFont.truetype("DejaVuSans.ttf", 15)       # Scaled down for comfortable spacing
+    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 20) # Scaled down header
 except IOError:
     font = ImageFont.load_default()
     header_font = font
 
-box_x0 = 50
-box_x1 = img_width - 50
-max_text_width = (box_x1 - box_x0) - 60
+box_x0 = 40
+box_x1 = img_width - 40
+max_text_width = (box_x1 - box_x0) - 50
 
 wrapped_lines = []
 for paragraph in cleaned_trivia.split("\n"):
@@ -274,12 +280,12 @@ for paragraph in cleaned_trivia.split("\n"):
     if current_line:
         wrapped_lines.append(current_line)
 
-line_height = 46
-header_height = 52
-padding = 35
-total_box_height = header_height + 10 + (len(wrapped_lines) * line_height) + (padding * 2)
+line_height = 20  # Tighter, balanced line height
+header_height = 28 
+padding = 20
+total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding * 2)
 
-box_y1 = img_height - 40
+box_y1 = img_height - 30
 box_y0 = box_y1 - total_box_height
 
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -287,20 +293,20 @@ draw_overlay = ImageDraw.Draw(overlay)
 
 draw_overlay.rounded_rectangle(
     [box_x0, box_y0, box_x1, box_y1],
-    radius=24,
+    radius=16,
     fill=(15, 23, 42, 235),
     outline=(245, 158, 11, 255),
-    width=4
+    width=3
 )
 
 img = Image.alpha_composite(img, overlay).convert("RGB")
 draw = ImageDraw.Draw(img)
 
-text_x = box_x0 + 30
-text_y = box_y0 + padding
+text_x = box_x0 + 25
+text_y = box_y0 + 16
 
 draw.text((text_x, text_y), header_tag, fill=(252, 211, 77, 255), font=header_font)
-text_y += header_height + 10
+text_y += header_height
 
 for line in wrapped_lines:
     draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
