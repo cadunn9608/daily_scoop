@@ -242,20 +242,20 @@ if not image_bytes:
 
 image_path = "temp_trivia_image.png"
 
-# --- 6. Process Image & Render Balanced, Clean Text Box Overlay ---
+# --- 6. Process Image & Render Larger, Readable Text Box Overlay ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
 try:
-    font = ImageFont.truetype("DejaVuSans.ttf", 18)
-    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
+    font = ImageFont.truetype("DejaVuSans.ttf", 36)
+    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 44)
 except IOError:
     font = ImageFont.load_default()
     header_font = font
 
-box_x0 = 40
-box_x1 = img_width - 40
-max_text_width = (box_x1 - box_x0) - 50
+box_x0 = 50
+box_x1 = img_width - 50
+max_text_width = (box_x1 - box_x0) - 60
 
 wrapped_lines = []
 for paragraph in cleaned_trivia.split("\n"):
@@ -274,12 +274,12 @@ for paragraph in cleaned_trivia.split("\n"):
     if current_line:
         wrapped_lines.append(current_line)
 
-line_height = 24
-header_height = 32
-padding = 20
-total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding * 2)
+line_height = 46
+header_height = 52
+padding = 35
+total_box_height = header_height + 10 + (len(wrapped_lines) * line_height) + (padding * 2)
 
-box_y1 = img_height - 30
+box_y1 = img_height - 40
 box_y0 = box_y1 - total_box_height
 
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -287,20 +287,20 @@ draw_overlay = ImageDraw.Draw(overlay)
 
 draw_overlay.rounded_rectangle(
     [box_x0, box_y0, box_x1, box_y1],
-    radius=16,
+    radius=24,
     fill=(15, 23, 42, 235),
     outline=(245, 158, 11, 255),
-    width=3
+    width=4
 )
 
 img = Image.alpha_composite(img, overlay).convert("RGB")
 draw = ImageDraw.Draw(img)
 
-text_x = box_x0 + 25
-text_y = box_y0 + 16
+text_x = box_x0 + 30
+text_y = box_y0 + padding
 
 draw.text((text_x, text_y), header_tag, fill=(252, 211, 77, 255), font=header_font)
-text_y += header_height
+text_y += header_height + 10
 
 for line in wrapped_lines:
     draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
