@@ -8,7 +8,7 @@ from google import genai
 
 def make_bold(text):
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    bold = "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜J𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
+    bold = "𝗔𝗕𝗖𝗗𝗘𝗙G𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵"
     return text.translate(str.maketrans(normal, bold))
 
 def get_valid_facebook_token():
@@ -163,7 +163,7 @@ setting_choice = random.choice([
     "a steampunk clockwork laboratory with whirring brass gears, ticking gauges, and steam-powered stainless steel churns",
     "a cozy cabin kitchen during a gentle winter snowstorm with soft frost framing the windowpanes",
     "an underwater marine biology station with curved glass domes showing colorful coral reefs and swimming sea turtles",
-    "a vibrant carnival midway tent surrounded by colorful bunting, festive paper lanterns, and blue ribbon awards",
+    "a bustling carnival midway tent surrounded by colorful bunting, festive paper lanterns, and blue ribbon awards",
     "a sleek mid-century modern architectural studio with floor-to-ceiling glass windows and minimalist drafting tables",
     "a subterranean crystal cavern glowing softly with bioluminescent blue quartz crystals and mineral stalactites",
     "a retro drive-in diner kitchen with black-and-white checkered floors, stainless steel counters, and glowing jukeboxes",
@@ -242,20 +242,20 @@ if not image_bytes:
 
 image_path = "temp_trivia_image.png"
 
-# --- 6. Process Image & Render Pixel-Perfect Text Box Overlay ---
+# --- 6. Process Image & Render Larger, Readable Text Box Overlay ---
 img = Image.open(BytesIO(image_bytes)).convert("RGBA")
 img_width, img_height = img.size
 
 try:
-    font = ImageFont.truetype("DejaVuSans.ttf", 18)
-    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
+    font = ImageFont.truetype("DejaVuSans.ttf", 36)
+    header_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 44)
 except IOError:
     font = ImageFont.load_default()
     header_font = font
 
-box_x0 = 40
-box_x1 = img_width - 40
-max_text_width = (box_x1 - box_x0) - 50
+box_x0 = 50
+box_x1 = img_width - 50
+max_text_width = (box_x1 - box_x0) - 60
 
 wrapped_lines = []
 for paragraph in cleaned_trivia.split("\n"):
@@ -274,12 +274,12 @@ for paragraph in cleaned_trivia.split("\n"):
     if current_line:
         wrapped_lines.append(current_line)
 
-line_height = 24
-header_height = 32
-padding = 20
-total_box_height = header_height + (len(wrapped_lines) * line_height) + (padding * 2)
+line_height = 46
+header_height = 52
+padding = 35
+total_box_height = header_height + 10 + (len(wrapped_lines) * line_height) + (padding * 2)
 
-box_y1 = img_height - 30
+box_y1 = img_height - 40
 box_y0 = box_y1 - total_box_height
 
 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -287,20 +287,20 @@ draw_overlay = ImageDraw.Draw(overlay)
 
 draw_overlay.rounded_rectangle(
     [box_x0, box_y0, box_x1, box_y1],
-    radius=16,
+    radius=24,
     fill=(15, 23, 42, 235),
     outline=(245, 158, 11, 255),
-    width=3
+    width=4
 )
 
 img = Image.alpha_composite(img, overlay).convert("RGB")
 draw = ImageDraw.Draw(img)
 
-text_x = box_x0 + 25
-text_y = box_y0 + 16
+text_x = box_x0 + 30
+text_y = box_y0 + padding
 
 draw.text((text_x, text_y), header_tag, fill=(252, 211, 77, 255), font=header_font)
-text_y += header_height
+text_y += header_height + 10
 
 for line in wrapped_lines:
     draw.text((text_x, text_y), line, fill=(241, 245, 249, 255), font=font)
